@@ -292,7 +292,7 @@ async function loadData() {
     const [spy, qqq, vix] = await Promise.all([
       fetchQuote('SPY'),
       fetchQuote('QQQ'),
-      fetchQuote('^VIX') // Finnhub uses ^VIX for volatility index
+      fetchQuote('VXX') // Finnhub uses ^VIX for volatility index
     ]);
 
     renderMetrics(spy, qqq, vix);
