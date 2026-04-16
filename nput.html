@@ -362,21 +362,24 @@ function parseYF(j) {
 }
 
 async function fetchVIX() {
+  // Generate a unique timestamp for every call to bypass cache
+  const cacheBuster = `&_=${Date.now()}`;
+  
   /* 1. direct */
   try {
-    const r = await fetch(YF_URL, { signal: AbortSignal.timeout(5000) });
+    const r = await fetch(YF_URL + cacheBuster, { signal: AbortSignal.timeout(5000) });
     if (r.ok) return parseYF(await r.json());
   } catch(_) {}
 
   /* 2. corsproxy.io */
   try {
-    const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(YF_URL),
+    const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(YF_URL + cacheBuster),
                           { signal: AbortSignal.timeout(8000) });
     if (r.ok) return parseYF(await r.json());
   } catch(_) {}
 
   /* 3. allorigins.win (returns {contents: "..."}) */
-  const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(YF_URL),
+  const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(YF_URL + cacheBuster),
                         { signal: AbortSignal.timeout(10000) });
   if (!r.ok) throw new Error('VIX: all fetch methods failed');
   const w = await r.json();
