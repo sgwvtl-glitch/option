@@ -30,250 +30,493 @@
     color: var(--text);
     font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
     min-height: 100vh;
-    padding: 0;
   }
   .nav {
     background: var(--bg2);
     border-bottom: 1px solid var(--border);
     padding: 0 1.5rem;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    height: 52px;
-    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    height: 52px; position: sticky; top: 0; z-index: 100;
   }
   .nav-logo { font-size: 15px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
   .nav-logo span { color: var(--accent); }
   .nav-right { display: flex; align-items: center; gap: 14px; }
   .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+  .live-dot.loading { background: var(--amber); }
+  .live-dot.error   { background: var(--red); animation: none; }
   @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
   .nav-time { font-size: 12px; color: var(--muted); }
+  .countdown { font-size: 12px; color: var(--muted); background: var(--bg3); padding: 3px 9px; border-radius: 5px; border: 1px solid var(--border2); }
+  .countdown.urgent { color: var(--amber); border-color: rgba(240,180,41,0.3); }
   .refresh-btn {
-    font-size: 11px; padding: 4px 10px; border-radius: 6px;
+    font-size: 12px; padding: 5px 12px; border-radius: 6px;
     background: var(--bg3); border: 1px solid var(--border2);
-    color: var(--text); cursor: pointer;
+    color: var(--text); cursor: pointer; transition: background .15s;
   }
+  .refresh-btn:hover { background: var(--blue-bg); border-color: var(--accent); }
+  .refresh-btn:disabled { opacity: .4; cursor: default; }
   .wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
   .banner {
     border-radius: 10px; padding: 1rem 1.25rem;
     margin-bottom: 1.25rem;
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    border: 1px solid;
-    transition: all 0.3s;
+    border: 1px solid; transition: all .3s;
   }
-  .banner.go { background: var(--green-bg); border-color: rgba(61,214,140,0.3); }
-  .banner.no { background: var(--red-bg); border-color: rgba(240,101,101,0.3); }
+  .banner.go   { background: var(--green-bg); border-color: rgba(61,214,140,0.3); }
+  .banner.no   { background: var(--red-bg);   border-color: rgba(240,101,101,0.3); }
   .banner.wait { background: var(--amber-bg); border-color: rgba(240,180,41,0.3); }
   .banner-signal { font-size: 20px; font-weight: 700; }
-  .banner.go .banner-signal { color: var(--green); }
-  .banner.no .banner-signal { color: var(--red); }
+  .banner.go   .banner-signal { color: var(--green); }
+  .banner.no   .banner-signal { color: var(--red); }
   .banner.wait .banner-signal { color: var(--amber); }
-  .banner-reason { font-size: 13px; color: var(--muted); }
+  .banner-reason { font-size: 13px; color: var(--muted); margin-top: 3px; }
+  .banner-icon { font-size: 28px; }
   .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
   .mc { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .9rem 1rem; }
-  .mc-label { font-size: 11px; color: var(--muted); margin-bottom: 6px; text-transform: uppercase; }
-  .mc-val { font-size: 20px; font-weight: 600; }
+  .mc-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
+  .mc-val { font-size: 22px; font-weight: 600; }
   .mc-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
-  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; margin-bottom: 1.25rem; }
-  .card-title { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; margin-bottom: 1rem; }
-  .check-item { display: flex; align-items: center; gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .check-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold; flex-shrink: 0; }
-  .ci-pass { background: var(--green-bg); color: var(--green); }
-  .ci-fail { background: var(--red-bg); color: var(--red); }
-  .ci-warn { background: var(--amber-bg); color: var(--amber); }
-  .ci-unknown { background: var(--bg3); color: var(--muted); }
-  .up { color: var(--green); }
-  .down { color: var(--red); }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .mc-src { font-size: 10px; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-top: 5px; }
+  .src-fh { background: rgba(91,156,246,0.15); color: var(--blue); }
+  .src-yf { background: rgba(240,120,60,0.13); color: #f09070; }
+  .up      { color: var(--green); }
+  .down    { color: var(--red); }
+  .neutral { color: var(--amber); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+  .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .85rem; }
+  .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .check-item:last-child { border-bottom: none; }
+  .check-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 1px; font-weight: 700; }
+  .ci-pass    { background: var(--green-bg); color: var(--green); }
+  .ci-fail    { background: var(--red-bg);   color: var(--red); }
+  .ci-warn    { background: var(--amber-bg); color: var(--amber); }
+  .ci-unknown { background: var(--bg3);      color: var(--muted); }
   .param-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .param-v { font-weight: 600; }
-  .footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 2rem; }
-  .skeleton { background: var(--bg3); border-radius: 4px; animation: shimmer 1.5s infinite; height: 20px; width: 60px; display: inline-block; }
-  @keyframes shimmer { 0% {opacity: 0.3} 50% {opacity: 0.7} 100% {opacity: 0.3} }
-  @media(max-width:640px){ .metrics { grid-template-columns: 1fr 1fr; } .grid2 { grid-template-columns: 1fr; } }
+  .param-row:last-child { border-bottom: none; }
+  .param-k { color: var(--muted); }
+  .param-v { font-weight: 600; color: var(--text); }
+  .week { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+  .day-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .6rem; text-align: center; }
+  .day-card.today { border-color: var(--accent); background: var(--blue-bg); }
+  .day-name { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 5px; }
+  .day-card.today .day-name { color: var(--blue); }
+  .day-action { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4; }
+  .day-card.today .day-action { color: var(--blue); }
+  .assess-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.5; }
+  .assess-item:last-child { border-bottom: none; }
+  .badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; flex-shrink: 0; margin-top: 2px; letter-spacing: .03em; }
+  .badge-g { background: var(--green-bg); color: var(--green); }
+  .badge-r { background: var(--red-bg);   color: var(--red); }
+  .badge-a { background: var(--amber-bg); color: var(--amber); }
+  .error-box { background: var(--red-bg); border: 1px solid rgba(240,101,101,0.3); border-radius: 8px; padding: .75rem 1rem; font-size: 12px; color: var(--red); margin-bottom: 1rem; display: none; line-height: 1.6; }
+  .skeleton { background: var(--bg3); border-radius: 4px; animation: shimmer 1.4s infinite; display: inline-block; color: transparent; }
+  @keyframes shimmer { 0%,100%{opacity:.4}50%{opacity:.9} }
+  .footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 2rem; line-height: 1.9; }
+  .footer a { color: var(--accent); text-decoration: none; }
+  @media(max-width:640px){
+    .metrics { grid-template-columns: 1fr 1fr; }
+    .grid2   { grid-template-columns: 1fr; }
+    .week    { gap: 5px; }
+    .day-action { font-size: 10px; }
+  }
 </style>
 </head>
 <body>
 
 <nav class="nav">
-  <div class="nav-logo"><span>⬡</span> 策略仪表盘 (Live)</div>
+  <div class="nav-logo"><span>⬡</span> 期权收入策略仪表盘</div>
   <div class="nav-right">
-    <div class="live-dot"></div>
-    <span class="nav-time" id="clock">--:--:--</span>
-    <button class="refresh-btn" onclick="loadData()">刷新</button>
+    <div class="live-dot" id="live-dot"></div>
+    <span class="nav-time" id="clock">--</span>
+    <span class="countdown" id="countdown">60s</span>
+    <button class="refresh-btn" id="refresh-btn" onclick="triggerRefresh()">⟳ 刷新</button>
   </div>
 </nav>
 
 <div class="wrap">
+
+  <div class="error-box" id="error-box"></div>
+
+  <!-- SIGNAL BANNER -->
   <div class="banner wait" id="banner">
     <div>
-      <div class="banner-signal" id="banner-signal">等待数据...</div>
-      <div class="banner-reason" id="banner-reason">正在从 Finnhub 加载实时行情</div>
+      <div class="banner-signal" id="banner-signal">⏳ 加载中...</div>
+      <div class="banner-reason" id="banner-reason">正在从 Finnhub &amp; Yahoo Finance 获取数据</div>
     </div>
-    <div style="font-size: 24px;">📡</div>
+    <div class="banner-icon" id="banner-icon">📡</div>
   </div>
 
+  <!-- METRICS -->
   <div class="metrics">
     <div class="mc">
-      <div class="mc-label">SPY (S&P 500)</div>
-      <div class="mc-val" id="spy-val"><span class="skeleton"></span></div>
+      <div class="mc-label">SPY</div>
+      <div class="mc-val" id="spy-val"><span class="skeleton">$000.00</span></div>
       <div class="mc-sub" id="spy-chg">--</div>
+      <span class="mc-src src-fh">Finnhub</span>
     </div>
     <div class="mc">
-      <div class="mc-label">QQQ (Nasdaq)</div>
-      <div class="mc-val" id="qqq-val"><span class="skeleton"></span></div>
+      <div class="mc-label">QQQ</div>
+      <div class="mc-val" id="qqq-val"><span class="skeleton">$000.00</span></div>
       <div class="mc-sub" id="qqq-chg">--</div>
+      <span class="mc-src src-fh">Finnhub</span>
     </div>
     <div class="mc">
-      <div class="mc-label">VXX (波动率代理)</div>
-      <div class="mc-val" id="vix-val"><span class="skeleton"></span></div>
-      <div class="mc-sub" id="vix-sub">替代 VIX 指数</div>
+      <div class="mc-label">VIX 恐慌指数</div>
+      <div class="mc-val" id="vix-val"><span class="skeleton">00.00</span></div>
+      <div class="mc-sub" id="vix-sub">--</div>
+      <span class="mc-src src-yf">Yahoo Finance</span>
     </div>
     <div class="mc">
-      <div class="mc-label">入场建议</div>
-      <div class="mc-val" id="signal-val">--</div>
-      <div class="mc-sub">基于当前波动</div>
+      <div class="mc-label">入场信号</div>
+      <div class="mc-val" id="signal-val" style="font-size:14px;">--</div>
+      <div class="mc-sub" id="signal-sub">等待数据</div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-title">入场条件自动核查</div>
+  <!-- ENTRY CHECKLIST -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-title">今日入场条件核查</div>
     <div class="check-item">
-      <div class="check-icon ci-unknown" id="chk-mkt-icon">?</div>
-      <div><strong>市场跌幅</strong> (需 -0.5% ~ -1.5%): <span id="chk-mkt-val">--</span></div>
+      <div class="check-icon ci-unknown" id="chk-market-icon">?</div>
+      <div><strong>市场下跌幅度</strong>：需 -0.5% 至 -1.5%&nbsp;&nbsp;<span id="chk-market-val" style="color:var(--muted);font-size:12px;"></span></div>
     </div>
     <div class="check-item">
-      <div class="check-icon ci-unknown" id="chk-vxx-icon">?</div>
-      <div><strong>波动率飙升</strong> (VXX 涨幅 > 3%): <span id="chk-vxx-val">--</span></div>
+      <div class="check-icon ci-unknown" id="chk-vix-icon">?</div>
+      <div><strong>波动率上升</strong>：VIX &gt; 20 偏高，&gt; 25 为理想触发区&nbsp;&nbsp;<span id="chk-vix-val" style="color:var(--muted);font-size:12px;"></span></div>
     </div>
     <div class="check-item">
       <div class="check-icon ci-warn">!</div>
-      <div><strong>日内企稳</strong>: 需人工确认价格是否在支撑位企稳</div>
+      <div><strong>日内企稳信号</strong>：需人工确认 — 观察抛售后价格是否趋稳，成交量是否缩小</div>
+    </div>
+    <div class="check-item">
+      <div class="check-icon ci-unknown" id="chk-green-icon">?</div>
+      <div><strong>非绿色日</strong>：市场上涨日严禁入场&nbsp;&nbsp;<span id="chk-green-val" style="color:var(--muted);font-size:12px;"></span></div>
     </div>
   </div>
 
+  <!-- WEEKLY PLAN -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-title">本周操作计划</div>
+    <div class="week" id="week-plan"></div>
+  </div>
+
+  <!-- PARAMS -->
   <div class="grid2">
     <div class="card">
-      <div class="card-title">SPY 参考行权价</div>
-      <div class="param-row"><span>当前价</span><span class="param-v" id="ref-spy-price">--</span></div>
-      <div class="param-row"><span>建议行权 (-6%)</span><span class="param-v" id="ref-spy-strike" style="color:var(--accent)">--</span></div>
+      <div class="card-title">SPY 价差参数</div>
+      <div class="param-row"><span class="param-k">到期日 (DTE)</span><span class="param-v">30–45 天</span></div>
+      <div class="param-row"><span class="param-k">Delta 范围</span><span class="param-v">0.15 – 0.20</span></div>
+      <div class="param-row"><span class="param-k">虚值距离</span><span class="param-v">5–7%</span></div>
+      <div class="param-row"><span class="param-k">价差宽度</span><span class="param-v">10 点</span></div>
+      <div class="param-row"><span class="param-k">参考行权价区间</span><span class="param-v" id="spy-strike">--</span></div>
     </div>
     <div class="card">
-      <div class="card-title">QQQ 参考行权价</div>
-      <div class="param-row"><span>当前价</span><span class="param-v" id="ref-qqq-price">--</span></div>
-      <div class="param-row"><span>建议行权 (-8%)</span><span class="param-v" id="ref-qqq-strike" style="color:var(--accent)">--</span></div>
+      <div class="card-title">QQQ 价差参数</div>
+      <div class="param-row"><span class="param-k">到期日 (DTE)</span><span class="param-v">30–45 天</span></div>
+      <div class="param-row"><span class="param-k">Delta 范围</span><span class="param-v">0.10 – 0.18</span></div>
+      <div class="param-row"><span class="param-k">虚值距离</span><span class="param-v">7–10%</span></div>
+      <div class="param-row"><span class="param-k">价差宽度</span><span class="param-v">10–15 点</span></div>
+      <div class="param-row"><span class="param-k">参考行权价区间</span><span class="param-v" id="qqq-strike">--</span></div>
     </div>
+  </div>
+
+  <!-- RISK RULES -->
+  <div class="card" style="margin-bottom:1.25rem; margin-top:12px;">
+    <div class="card-title">风险管理规则</div>
+    <div class="check-item"><div class="check-icon ci-pass">✓</div><div>单笔最大风险 ≤ 账户总值的 <strong>5%</strong></div></div>
+    <div class="check-item"><div class="check-icon ci-pass">✓</div><div>达到 <strong>50% 盈利</strong>时立即平仓，不等到到期</div></div>
+    <div class="check-item"><div class="check-icon ci-warn">!</div><div>亏损达 <strong>2× 收取权利金</strong>时强制止损</div></div>
+    <div class="check-item"><div class="check-icon ci-warn">!</div><div>下跌行情中<strong>优先减少 QQQ 敞口</strong></div></div>
+  </div>
+
+  <!-- ASSESSMENT -->
+  <div class="card" style="margin-bottom:1.25rem;">
+    <div class="card-title">策略评估</div>
+    <div class="assess-item"><span class="badge badge-g">优点</span><span>卖出虚值看跌价差，最大亏损锁定为价差宽度，风险有限可量化。</span></div>
+    <div class="assess-item"><span class="badge badge-g">优点</span><span>只在市场下跌 + VIX 跳升时入场，确保权利金足够丰厚，避免低波环境卖便宜货。</span></div>
+    <div class="assess-item"><span class="badge badge-g">优点</span><span>50% 获利了结是业内黄金法则，持仓时间减半，有效降低 Gamma 和事件风险。</span></div>
+    <div class="assess-item"><span class="badge badge-g">优点</span><span>2× 止损规则清晰，配合 5% 仓位上限，账户单次回撤可控。</span></div>
+    <div class="assess-item"><span class="badge badge-a">注意</span><span>VIX 需达 20–25+ 才值得入场，VIX &lt; 18 时权利金稀薄，风险回报比不佳。</span></div>
+    <div class="assess-item"><span class="badge badge-a">注意</span><span>30–45 DTE 窗口可能跨越 FOMC / CPI / 财报季，入场前务必检查经济日历。</span></div>
+    <div class="assess-item"><span class="badge badge-r">风险</span><span>连续大跌行情会连续触发止损，需严格执行单笔 5% 风险上限，切勿加仓摊平。</span></div>
+    <div class="assess-item"><span class="badge badge-r">风险</span><span>SPY + QQQ 相关性极高，系统性下跌时两腿同时受压，非真正的敞口分散。</span></div>
   </div>
 
   <div class="footer">
-    数据源: Finnhub API | 自动刷新: 60s<br>
+    行情：<a href="https://finnhub.io" target="_blank">Finnhub</a>（SPY / QQQ）&nbsp;+&nbsp;
+    <a href="https://finance.yahoo.com/quote/%5EVIX" target="_blank">Yahoo Finance</a>（VIX）
+    &nbsp;|&nbsp; 每 <strong>60 秒</strong>自动刷新
+    &nbsp;|&nbsp; 本页仅供参考，不构成投资建议<br>
     <span id="last-update">--</span>
   </div>
-</div>
+
+</div><!-- /wrap -->
 
 <script>
-/** * 配置区 
- */
-const API_KEY = 'd7g2qrpr01qqb8ri54kgd7g2qrpr01qqb8ri54l0'; 
+/* ═══════════════════════════════════════════════
+   CONFIG
+═══════════════════════════════════════════════ */
+const FINNHUB_KEY      = 'd7g2qrpr01qqb8ri54kgd7g2qrpr01qqb8ri54l0';   // ← paste your key here
+const REFRESH_SECONDS  = 60;
 
+/* ═══════════════════════════════════════════════
+   CLOCK
+═══════════════════════════════════════════════ */
 function updateClock() {
-  document.getElementById('clock').textContent = new Date().toLocaleTimeString();
+  document.getElementById('clock').textContent = new Date().toLocaleString('zh-CN', {
+    month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
+  });
 }
 setInterval(updateClock, 1000);
+updateClock();
 
-async function fetchStock(symbol) {
-  const response = await fetch(`https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${API_KEY}`);
-  const data = await response.json();
-  if (!data.c) throw new Error("API Limit or Error");
-  return { price: data.c, pct: data.dp, chg: data.d };
+/* ═══════════════════════════════════════════════
+   COUNTDOWN TIMER
+═══════════════════════════════════════════════ */
+let cdTimer = null, cdLeft = REFRESH_SECONDS;
+
+function startCountdown() {
+  clearInterval(cdTimer);
+  cdLeft = REFRESH_SECONDS;
+  const el = document.getElementById('countdown');
+  cdTimer = setInterval(() => {
+    cdLeft--;
+    el.textContent  = cdLeft + 's';
+    el.className    = 'countdown' + (cdLeft <= 10 ? ' urgent' : '');
+    if (cdLeft <= 0) { clearInterval(cdTimer); loadData(); }
+  }, 1000);
 }
 
-async function loadData() {
-  if (API_KEY.includes('YOUR_')) {
-    document.getElementById('banner-signal').textContent = "未配置 API KEY";
-    return;
-  }
+/* ═══════════════════════════════════════════════
+   WEEKLY PLAN
+═══════════════════════════════════════════════ */
+const DAYS    = ['周一','周二','周三','周四','周五'];
+const ACTIONS = ['开仓建立头寸','红日加仓','最终入场窗口','获利了结','降低风险'];
 
+(function renderWeek() {
+  const todayIdx = new Date().getDay() - 1; // Mon=0
+  const wrap = document.getElementById('week-plan');
+  DAYS.forEach((d, i) => {
+    const el = document.createElement('div');
+    el.className = 'day-card' + (i === todayIdx ? ' today' : '');
+    el.innerHTML = `<div class="day-name">${d}${i===todayIdx?' ✦':''}</div><div class="day-action">${ACTIONS[i]}</div>`;
+    wrap.appendChild(el);
+  });
+})();
+
+/* ═══════════════════════════════════════════════
+   HELPERS
+═══════════════════════════════════════════════ */
+const fmt     = (n, d=2) => (!isNaN(n) && n!=null) ? (+n).toFixed(d) : '--';
+const fmtP    = n => fmt(n, 2) !== '--' ? '$' + fmt(n,2) : '--';
+const fmtPct  = n => {
+  if (isNaN(n) || n == null) return '--';
+  return (n > 0 ? '+' : '') + (+n).toFixed(2) + '%';
+};
+
+function setLoading(on) {
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled    = on;
+  btn.textContent = on ? '⟳ ...' : '⟳ 刷新';
+  document.getElementById('live-dot').className = 'live-dot' + (on ? ' loading' : '');
+}
+
+function showError(msg) {
+  const b = document.getElementById('error-box');
+  b.style.display = msg ? 'block' : 'none';
+  b.textContent   = msg ? '⚠ ' + msg : '';
+}
+
+/* ═══════════════════════════════════════════════
+   FETCH: Finnhub
+   GET /api/v1/quote?symbol=X&token=KEY
+   { c: price, d: change, dp: pct%, o: open, pc: prevClose }
+═══════════════════════════════════════════════ */
+async function fetchFinnhub(symbol) {
+  const r = await fetch(
+    `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`,
+    { signal: AbortSignal.timeout(8000) }
+  );
+  if (!r.ok) throw new Error(`Finnhub ${symbol}: HTTP ${r.status}`);
+  const j = await r.json();
+  if (!j.c || j.c === 0) throw new Error(`Finnhub ${symbol}: API key invalid or market closed`);
+  return { price: j.c, change: j.d, pct: j.dp, open: j.o, prevClose: j.pc };
+}
+
+/* ═══════════════════════════════════════════════
+   FETCH: VIX from Yahoo Finance
+   Tries 3 methods in order:
+     1. Direct (works if browser / no CORS block)
+     2. corsproxy.io
+     3. allorigins.win
+═══════════════════════════════════════════════ */
+const YF_URL = 'https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d';
+
+function parseYF(j) {
+  const meta  = j?.chart?.result?.[0]?.meta;
+  const price = meta?.regularMarketPrice;
+  const prev  = meta?.chartPreviousClose;
+  if (!price) throw new Error('VIX: unexpected Yahoo Finance JSON structure');
+  return { price, pct: prev ? (price - prev) / prev * 100 : null };
+}
+
+async function fetchVIX() {
+  /* 1. direct */
   try {
-    const [spy, qqq, vxx] = await Promise.all([
-      fetchStock('SPY'),
-      fetchStock('QQQ'),
-      fetchStock('VXX')
-    ]);
+    const r = await fetch(YF_URL, { signal: AbortSignal.timeout(5000) });
+    if (r.ok) return parseYF(await r.json());
+  } catch(_) {}
 
-    // Update Metrics
-    updateMetric('spy', spy);
-    updateMetric('qqq', qqq);
-    
-    // VXX Metric
-    const vxxVal = document.getElementById('vix-val');
-    vxxVal.textContent = (vxx.pct > 0 ? '+' : '') + vxx.pct.toFixed(2) + '%';
-    vxxVal.className = 'mc-val ' + (vxx.pct > 3 ? 'up' : 'text');
+  /* 2. corsproxy.io */
+  try {
+    const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(YF_URL),
+                          { signal: AbortSignal.timeout(8000) });
+    if (r.ok) return parseYF(await r.json());
+  } catch(_) {}
 
-    // Checklist Logic
-    const mktOk = spy.pct <= -0.5 && spy.pct >= -1.8;
-    const vxxOk = vxx.pct >= 3.0;
+  /* 3. allorigins.win (returns {contents: "..."}) */
+  const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(YF_URL),
+                        { signal: AbortSignal.timeout(10000) });
+  if (!r.ok) throw new Error('VIX: all fetch methods failed');
+  const w = await r.json();
+  return parseYF(JSON.parse(w.contents));
+}
 
-    updateCheck('chk-mkt', mktOk, `SPY ${spy.pct.toFixed(2)}%`);
-    updateCheck('chk-vxx', vxxOk, `VXX ${vxx.pct.toFixed(2)}%`);
+/* ═══════════════════════════════════════════════
+   RENDER
+═══════════════════════════════════════════════ */
+function renderMetrics(spy, qqq, vix) {
+  const sc = spy.pct > 0 ? 'up' : spy.pct < 0 ? 'down' : '';
+  document.getElementById('spy-val').innerHTML = `<span class="${sc}">${fmtP(spy.price)}</span>`;
+  document.getElementById('spy-chg').innerHTML = `<span class="${sc}">${fmtPct(spy.pct)}</span>`;
 
-    // Banner Logic
-    const banner = document.getElementById('banner');
-    const sig = document.getElementById('banner-signal');
-    const reason = document.getElementById('banner-reason');
+  const qc = qqq.pct > 0 ? 'up' : qqq.pct < 0 ? 'down' : '';
+  document.getElementById('qqq-val').innerHTML = `<span class="${qc}">${fmtP(qqq.price)}</span>`;
+  document.getElementById('qqq-chg').innerHTML = `<span class="${qc}">${fmtPct(qqq.pct)}</span>`;
 
-    if (spy.pct > 0) {
-      banner.className = 'banner no';
-      sig.textContent = "🚫 禁止入场";
-      reason.textContent = "当前为上涨行情，不符合卖出 Put 策略。";
-      document.getElementById('signal-val').textContent = "观望";
-    } else if (mktOk && vxxOk) {
-      banner.className = 'banner go';
-      sig.textContent = "✅ 信号激活";
-      reason.textContent = "跌幅与波动率达到窗口期，可寻找支撑建仓。";
-      document.getElementById('signal-val').textContent = "入场";
-      document.getElementById('signal-val').className = "mc-val up";
-    } else {
-      banner.className = 'banner wait';
-      sig.textContent = "⏸ 观察中";
-      reason.textContent = "等待市场回调至区间或波动率进一步放大。";
-      document.getElementById('signal-val').textContent = "等待";
-    }
+  const vc = vix.price > 25 ? 'down' : vix.price > 18 ? 'neutral' : 'up';
+  const vl = vix.price > 30 ? '极度恐慌 ✦' : vix.price > 25 ? '高波动 ✦ 可入场' : vix.price > 18 ? '中等波动' : '偏低';
+  document.getElementById('vix-val').innerHTML  = `<span class="${vc}">${fmt(vix.price,1)}</span>`;
+  document.getElementById('vix-sub').textContent = vl;
 
-    // Reference Strikes
-    document.getElementById('ref-spy-price').textContent = '$' + spy.price.toFixed(2);
-    document.getElementById('ref-spy-strike').textContent = '$' + (spy.price * 0.94).toFixed(1);
-    document.getElementById('ref-qqq-price').textContent = '$' + qqq.price.toFixed(2);
-    document.getElementById('ref-qqq-strike').textContent = '$' + (qqq.price * 0.92).toFixed(1);
+  document.getElementById('spy-strike').textContent =
+    `≈ $${(spy.price * 0.93).toFixed(0)} – $${(spy.price * 0.95).toFixed(0)}`;
+  document.getElementById('qqq-strike').textContent =
+    `≈ $${(qqq.price * 0.90).toFixed(0)} – $${(qqq.price * 0.93).toFixed(0)}`;
+}
 
-    document.getElementById('last-update').textContent = "最后更新: " + new Date().toLocaleTimeString();
+function renderChecklist(spy, vix) {
+  const p = spy.pct;
 
-  } catch (e) {
-    document.getElementById('banner-signal').textContent = "API 请求失败";
-    document.getElementById('banner-reason').textContent = "请检查 KEY 或刷新频率 (每分钟 1 次)";
+  const mi = document.getElementById('chk-market-icon');
+  const mv = document.getElementById('chk-market-val');
+  mv.textContent = `SPY ${fmtPct(p)}`;
+  if (p >= -1.5 && p <= -0.5)      { mi.className = 'check-icon ci-pass'; mi.textContent = '✓'; }
+  else if (p < -1.5)               { mi.className = 'check-icon ci-warn'; mi.textContent = '!'; mv.textContent += '（跌幅超范围，等待企稳）'; }
+  else                             { mi.className = 'check-icon ci-fail'; mi.textContent = '✗'; }
+
+  const vi = document.getElementById('chk-vix-icon');
+  const vv = document.getElementById('chk-vix-val');
+  vv.textContent = `VIX ${fmt(vix.price,1)}`;
+  if (vix.price >= 25)             { vi.className = 'check-icon ci-pass'; vi.textContent = '✓'; }
+  else if (vix.price >= 20)        { vi.className = 'check-icon ci-warn'; vi.textContent = '!'; vv.textContent += '（偏高但未到理想触发区）'; }
+  else                             { vi.className = 'check-icon ci-fail'; vi.textContent = '✗'; vv.textContent += '（波动率偏低，暂不入场）'; }
+
+  const gi = document.getElementById('chk-green-icon');
+  const gv = document.getElementById('chk-green-val');
+  gv.textContent = `SPY ${fmtPct(p)}`;
+  if (p < 0) { gi.className = 'check-icon ci-pass'; gi.textContent = '✓'; }
+  else       { gi.className = 'check-icon ci-fail'; gi.textContent = '✗'; gv.textContent += ' — 上涨日禁止入场'; }
+}
+
+function renderBanner(spy, vix) {
+  const p = spy.pct, v = vix.price;
+  const bn = document.getElementById('banner');
+  const sg = document.getElementById('banner-signal');
+  const rs = document.getElementById('banner-reason');
+  const ic = document.getElementById('banner-icon');
+  const sv = document.getElementById('signal-val');
+  const ss = document.getElementById('signal-sub');
+
+  const mktOk    = p >= -1.5 && p <= -0.5;
+  const vixOk    = v >= 20;
+  const notGreen = p < 0;
+
+  bn.className = 'banner';
+
+  if (p > 0) {
+    bn.classList.add('no');
+    sg.textContent = '🚫 今日禁止入场';
+    rs.textContent = `市场上涨 SPY ${fmtPct(p)}，绿色日严禁开仓`;
+    ic.textContent = '🔴';
+    sv.innerHTML   = '<span class="down">禁止</span>';
+    ss.textContent = '市场上涨';
+  } else if (mktOk && vixOk) {
+    bn.classList.add('go');
+    sg.textContent = '✅ 入场信号激活';
+    rs.textContent = `SPY ${fmtPct(p)} 在入场区间，VIX ${fmt(v,1)} 波动率上升，可建仓（确认日内企稳）`;
+    ic.textContent = '🟢';
+    sv.innerHTML   = '<span class="up">入场</span>';
+    ss.textContent = '条件满足';
+  } else if (notGreen && !vixOk) {
+    bn.classList.add('wait');
+    sg.textContent = '⏸ 观望 — 等待波动率上升';
+    rs.textContent = `SPY ${fmtPct(p)} 方向正确，但 VIX ${fmt(v,1)} 偏低，权利金稀薄，暂不入场`;
+    ic.textContent = '🟡';
+    sv.innerHTML   = '<span class="neutral">观望</span>';
+    ss.textContent = 'VIX 不足';
+  } else if (notGreen && !mktOk) {
+    bn.classList.add('wait');
+    sg.textContent = '⏸ 观望 — 跌幅不在入场区间';
+    rs.textContent = `SPY ${fmtPct(p)}，策略要求 -0.5% 至 -1.5%。${p < -1.5 ? '跌幅过大，等待企稳' : '跌幅不足'}`;
+    ic.textContent = '🟡';
+    sv.innerHTML   = '<span class="neutral">观望</span>';
+    ss.textContent = '跌幅不符';
+  } else {
+    bn.classList.add('wait');
+    sg.textContent = '📊 数据已加载';
+    rs.textContent = `SPY ${fmtPct(p)} | VIX ${fmt(v,1)}`;
+    ic.textContent = '📊';
+    sv.textContent = '--'; ss.textContent = '--';
   }
 }
 
-function updateMetric(id, data) {
-  const valEl = document.getElementById(id + '-val');
-  const chgEl = document.getElementById(id + '-chg');
-  valEl.textContent = '$' + data.price.toFixed(2);
-  chgEl.textContent = (data.pct > 0 ? '+' : '') + data.pct.toFixed(2) + '%';
-  chgEl.className = 'mc-sub ' + (data.pct >= 0 ? 'up' : 'down');
+/* ═══════════════════════════════════════════════
+   MAIN LOAD
+═══════════════════════════════════════════════ */
+async function loadData() {
+  setLoading(true);
+  showError('');
+  try {
+    const [spy, qqq, vix] = await Promise.all([
+      fetchFinnhub('SPY'),
+      fetchFinnhub('QQQ'),
+      fetchVIX()
+    ]);
+    renderMetrics(spy, qqq, vix);
+    renderChecklist(spy, vix);
+    renderBanner(spy, vix);
+    document.getElementById('live-dot').className = 'live-dot';
+    document.getElementById('last-update').textContent =
+      '最后更新：' + new Date().toLocaleString('zh-CN');
+  } catch(err) {
+    document.getElementById('live-dot').className = 'live-dot error';
+    showError(err.message + ' — 请检查 Finnhub API Key 是否已填写，或网络是否正常');
+    console.error('[Dashboard]', err);
+    const bn = document.getElementById('banner');
+    bn.className = 'banner no';
+    document.getElementById('banner-signal').textContent = '❌ 数据加载失败';
+    document.getElementById('banner-reason').textContent = err.message;
+    document.getElementById('banner-icon').textContent   = '⚠️';
+  }
+  setLoading(false);
+  startCountdown();
 }
 
-function updateCheck(id, pass, text) {
-  const icon = document.getElementById(id + '-icon');
-  const val = document.getElementById(id + '-val');
-  icon.className = pass ? 'check-icon ci-pass' : 'check-icon ci-fail';
-  icon.textContent = pass ? '✓' : '✗';
-  val.textContent = text;
-}
+function triggerRefresh() { clearInterval(cdTimer); loadData(); }
 
-// Initial load
-loadData();
-// Auto refresh every 60 seconds
-setInterval(loadData, 60000);
+window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>
