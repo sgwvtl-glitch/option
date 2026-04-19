@@ -302,13 +302,12 @@ function initDOM() {
    CLOCK
 ═══════════════════════════════════════════════ */
 function updateClock() {
+  if (!DOM.clock) return;
   const now = new Date();
   DOM.clock.textContent = now.toLocaleString('zh-CN', {
     month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
   });
 }
-setInterval(updateClock, 1000);
-updateClock();
 
 /* ═══════════════════════════════════════════════
    COUNTDOWN TIMER
@@ -650,11 +649,21 @@ function triggerRefresh() { clearInterval(cdTimer); loadData(); }
 window.addEventListener('DOMContentLoaded', () => {
   const domReady = initDOM();
   
+  // Start clock immediately after DOM is ready
+  if (DOM.clock) {
+    updateClock();
+    setInterval(updateClock, 1000);
+  }
+  
   if (!domReady) {
     console.error('[Dashboard] DOM initialization failed, retrying...');
     setTimeout(() => {
       const retry = initDOM();
       if (retry) {
+        if (DOM.clock && !cdTimer) {
+          updateClock();
+          setInterval(updateClock, 1000);
+        }
         loadData();
       } else {
         showError('页面初始化失败，请刷新页面重试');
