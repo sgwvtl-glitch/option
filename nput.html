@@ -414,39 +414,69 @@ function parseYF(j) {
   return { price, pct: prev ? (price - prev) / prev * 100 : null };
 }
 
-async function fetchVIX(retries = 1) {
-  // Generate a unique timestamp for every call to bypass cache
+async function fetchVIX(retries = 2) {
   const cacheBuster = `&_=${Date.now()}`;
   let lastErr;
 
   for (let attempt = 0; attempt <= retries; attempt++) {
-    /* 1. direct */
+    // Method 1: corsproxy.io (most reliable)
     try {
-      const r = await fetch(YF_URL + cacheBuster, { signal: AbortSignal.timeout(5000) });
-      if (r.ok) return parseYF(await r.json());
-    } catch(_) {}
-
-    /* 2. corsproxy.io */
-    try {
+      console.log(`[VIX] Attempt ${attempt + 1}: trying corsproxy.io`);
       const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(YF_URL + cacheBuster),
                             { signal: AbortSignal.timeout(8000) });
-      if (r.ok) return parseYF(await r.json());
-    } catch(_) {}
+      if (!r.ok) throw new Error(`corsproxy HTTP ${r.status}`);
+      const j = await r.json();
+      const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (!price) throw new Error('Invalid VIX data from corsproxy');
+      console.log(`[VIX] Success via corsproxy: ${price}`);
+      return parseYF(j);
+    } catch(err) {
+      console.warn(`[VIX] corsproxy failed:`, err.message);
+      lastErr = err;
+    }
 
-    /* 3. allorigins.win (returns {contents: "..."}) */
+    // Method 2: allorigins.win
     try {
+      console.log(`[VIX] Attempt ${attempt + 1}: trying allorigins.win`);
       const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(YF_URL + cacheBuster),
                             { signal: AbortSignal.timeout(10000) });
-      if (!r.ok) throw new Error('VIX: allorigins HTTP ' + r.status);
+      if (!r.ok) throw new Error(`allorigins HTTP ${r.status}`);
       const w = await r.json();
-      return parseYF(JSON.parse(w.contents));
+      if (!w.contents) throw new Error('Empty response from allorigins');
+      const j = JSON.parse(w.contents);
+      const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (!price) throw new Error('Invalid VIX data from allorigins');
+      console.log(`[VIX] Success via allorigins: ${price}`);
+      return parseYF(j);
     } catch(err) {
+      console.warn(`[VIX] allorigins failed:`, err.message);
       lastErr = err;
-      console.warn(`[VIX] attempt ${attempt + 1} failed:`, err.message);
-      if (attempt < retries) await new Promise(res => setTimeout(res, 800 * (attempt + 1)));
+    }
+
+    // Method 3: direct (least likely to work due to CORS)
+    try {
+      console.log(`[VIX] Attempt ${attempt + 1}: trying direct`);
+      const r = await fetch(YF_URL + cacheBuster, { signal: AbortSignal.timeout(5000) });
+      if (!r.ok) throw new Error(`direct HTTP ${r.status}`);
+      const j = await r.json();
+      const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+      if (!price) throw new Error('Invalid VIX data from direct');
+      console.log(`[VIX] Success via direct: ${price}`);
+      return parseYF(j);
+    } catch(err) {
+      console.warn(`[VIX] direct failed:`, err.message);
+      lastErr = err;
+    }
+
+    // Wait before retry if not last attempt
+    if (attempt < retries) {
+      const delay = 1000 * (attempt + 1);
+      console.log(`[VIX] Waiting ${delay}ms before retry...`);
+      await new Promise(res => setTimeout(res, delay));
     }
   }
-  throw lastErr;
+  
+  throw lastErr || new Error('VIX: all methods failed');
 }
 
 /* ═══════════════════════════════════════════════
@@ -552,19 +582,22 @@ function renderBanner(spy, vix) {
    MAIN LOAD
 ═══════════════════════════════════════════════ */
 async function loadData() {
+  console.log('[Dashboard] Starting data load...');
   setLoading(true);
   showError('');
-  
+
   let loadTimeout = null;
-  
+
   // Add timeout for entire data load operation
   const timeoutPromise = new Promise((_, reject) => {
     loadTimeout = setTimeout(() => {
-      reject(new Error('数据加载超时，请检查网络连接'));
+      reject(new Error('数据加载超时 (25 秒)，请检查网络连接'));
     }, 25000);
   });
 
   try {
+    console.log('[Dashboard] Fetching SPY, QQQ from Finnhub and VIX from Yahoo...');
+    
     const [spy, qqq, vix] = await Promise.race([
       Promise.all([
         fetchFinnhub('SPY'),
@@ -573,26 +606,35 @@ async function loadData() {
       ]),
       timeoutPromise
     ]);
-    
+
     clearTimeout(loadTimeout);
-    
-    // Validate data before rendering
-    if (!spy.price || !qqq.price || !vix.price) {
-      throw new Error('获取的数据不完整，请重试');
+    console.log('[Dashboard] Data received:', { spy, qqq, vix });
+
+    // Validate data before rendering - check each individually
+    if (!spy || !spy.price) {
+      throw new Error('SPY 数据获取失败');
     }
-    
+    if (!qqq || !qqq.price) {
+      throw new Error('QQQ 数据获取失败');
+    }
+    if (!vix || !vix.price) {
+      throw new Error('VIX 数据获取失败');
+    }
+
+    console.log('[Dashboard] Data validation passed, rendering...');
     renderMetrics(spy, qqq, vix);
     renderChecklist(spy, vix);
     renderBanner(spy, vix);
     DOM['live-dot'].className = 'live-dot';
     DOM['last-update'].textContent =
       '最后更新：' + new Date().toLocaleString('zh-CN');
+    console.log('[Dashboard] Data load complete!');
   } catch(err) {
     if (loadTimeout) clearTimeout(loadTimeout);
     DOM['live-dot'].className = 'live-dot error';
     const errorMsg = err.message + ' — 请检查 Finnhub API Key 是否已填写，或网络是否正常';
     showError(errorMsg);
-    console.error('[Dashboard]', err);
+    console.error('[Dashboard] Load failed:', err);
     DOM.banner.className = 'banner no';
     DOM['banner-signal'].textContent = '❌ 数据加载失败';
     DOM['banner-reason'].textContent = err.message;
