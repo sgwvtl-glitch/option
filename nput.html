@@ -257,61 +257,35 @@
 /* ═══════════════════════════════════════════════
    CONFIG
 ═══════════════════════════════════════════════ */
-const FINNHUB_KEY      = 'd7g2qrpr01qqb8ri54kgd7g2qrpr01qqb8ri54l0';
+const FINNHUB_KEY      = 'd7g2qrpr01qqb8ri54kgd7g2qrpr01qqb8ri54l0';   // ← paste your key here
 const REFRESH_SECONDS  = 30;
-const ABORT_TIMEOUT    = 8000;
-const VIX_TIMEOUT      = 5000;
 
 /* ═══════════════════════════════════════════════
-   DOM CACHE - 避免重复查询
+   CLOCK
 ═══════════════════════════════════════════════ */
-const DOM = {};
-function initDOM() {
-  const ids = [
-    'clock', 'countdown', 'refresh-btn', 'live-dot', 'error-box',
-    'banner', 'banner-signal', 'banner-reason', 'banner-icon',
-    'spy-val', 'spy-chg', 'qqq-val', 'qqq-chg', 'vix-val', 'vix-sub',
-    'spy-strike', 'qqq-strike', 'signal-val', 'signal-sub',
-    'chk-market-icon', 'chk-market-val', 'chk-vix-icon', 'chk-vix-val',
-    'chk-green-icon', 'chk-green-val', 'week-plan', 'last-update'
-  ];
-  ids.forEach(id => DOM[id] = document.getElementById(id));
-}
-
-/* ═══════════════════════════════════════════════
-   CLOCK & COUNTDOWN - 合并为单个定时器
-═══════════════════════════════════════════════ */
-let mainTimer = null;
-let cdLeft = REFRESH_SECONDS;
-
-function updateTime() {
-  const now = new Date();
-  DOM.clock.textContent = now.toLocaleString('zh-CN', {
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleString('zh-CN', {
     month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
   });
-  
-  cdLeft--;
-  DOM.countdown.textContent = cdLeft + 's';
-  DOM.countdown.className = 'countdown' + (cdLeft <= 10 ? ' urgent' : '');
-  
-  if (cdLeft <= 0) {
-    cdLeft = REFRESH_SECONDS;
-    loadData();
-  }
 }
+setInterval(updateClock, 1000);
+updateClock();
 
-function startTimer() {
-  if (mainTimer) clearInterval(mainTimer);
+/* ═══════════════════════════════════════════════
+   COUNTDOWN TIMER
+═══════════════════════════════════════════════ */
+let cdTimer = null, cdLeft = REFRESH_SECONDS;
+
+function startCountdown() {
+  clearInterval(cdTimer);
   cdLeft = REFRESH_SECONDS;
-  updateTime();
-  mainTimer = setInterval(updateTime, 1000);
-}
-
-function stopTimer() {
-  if (mainTimer) {
-    clearInterval(mainTimer);
-    mainTimer = null;
-  }
+  const el = document.getElementById('countdown');
+  cdTimer = setInterval(() => {
+    cdLeft--;
+    el.textContent  = cdLeft + 's';
+    el.className    = 'countdown' + (cdLeft <= 10 ? ' urgent' : '');
+    if (cdLeft <= 0) { clearInterval(cdTimer); loadData(); }
+  }, 1000);
 }
 
 /* ═══════════════════════════════════════════════
@@ -321,37 +295,37 @@ const DAYS    = ['周一','周二','周三','周四','周五'];
 const ACTIONS = ['开仓建立头寸','红日加仓','最终入场窗口','获利了结','降低风险'];
 
 (function renderWeek() {
-  const todayIdx = new Date().getDay() - 1;
-  const wrap = DOM['week-plan'];
-  const frag = document.createDocumentFragment();
+  const todayIdx = new Date().getDay() - 1; // Mon=0
+  const wrap = document.getElementById('week-plan');
   DAYS.forEach((d, i) => {
     const el = document.createElement('div');
     el.className = 'day-card' + (i === todayIdx ? ' today' : '');
     el.innerHTML = `<div class="day-name">${d}${i===todayIdx?' ✦':''}</div><div class="day-action">${ACTIONS[i]}</div>`;
-    frag.appendChild(el);
+    wrap.appendChild(el);
   });
-  wrap.appendChild(frag);
 })();
 
 /* ═══════════════════════════════════════════════
    HELPERS
 ═══════════════════════════════════════════════ */
-const fmt    = (n, d=2) => (!isNaN(n) && n!=null) ? (+n).toFixed(d) : '--';
-const fmtP   = n => fmt(n, 2) !== '--' ? '$' + fmt(n,2) : '--';
-const fmtPct = n => {
+const fmt     = (n, d=2) => (!isNaN(n) && n!=null) ? (+n).toFixed(d) : '--';
+const fmtP    = n => fmt(n, 2) !== '--' ? '$' + fmt(n,2) : '--';
+const fmtPct  = n => {
   if (isNaN(n) || n == null) return '--';
   return (n > 0 ? '+' : '') + (+n).toFixed(2) + '%';
 };
 
 function setLoading(on) {
-  DOM['refresh-btn'].disabled = on;
-  DOM['refresh-btn'].textContent = on ? '⟳ ...' : '⟳ 刷新';
-  DOM['live-dot'].className = 'live-dot' + (on ? ' loading' : '');
+  const btn = document.getElementById('refresh-btn');
+  btn.disabled    = on;
+  btn.textContent = on ? '⟳ ...' : '⟳ 刷新';
+  document.getElementById('live-dot').className = 'live-dot' + (on ? ' loading' : '');
 }
 
 function showError(msg) {
-  DOM['error-box'].style.display = msg ? 'block' : 'none';
-  DOM['error-box'].textContent = msg ? '⚠ ' + msg : '';
+  const b = document.getElementById('error-box');
+  b.style.display = msg ? 'block' : 'none';
+  b.textContent   = msg ? '⚠ ' + msg : '';
 }
 
 /* ═══════════════════════════════════════════════
@@ -362,7 +336,7 @@ function showError(msg) {
 async function fetchFinnhub(symbol) {
   const r = await fetch(
     `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`,
-    { signal: AbortSignal.timeout(ABORT_TIMEOUT) }
+    { signal: AbortSignal.timeout(8000) }
   );
   if (!r.ok) throw new Error(`Finnhub ${symbol}: HTTP ${r.status}`);
   const j = await r.json();
@@ -393,64 +367,67 @@ async function fetchVIX() {
   
   /* 1. direct */
   try {
-    const r = await fetch(YF_URL + cacheBuster, { signal: AbortSignal.timeout(VIX_TIMEOUT) });
+    const r = await fetch(YF_URL + cacheBuster, { signal: AbortSignal.timeout(5000) });
     if (r.ok) return parseYF(await r.json());
   } catch(_) {}
 
   /* 2. corsproxy.io */
   try {
     const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(YF_URL + cacheBuster),
-                          { signal: AbortSignal.timeout(ABORT_TIMEOUT) });
+                          { signal: AbortSignal.timeout(8000) });
     if (r.ok) return parseYF(await r.json());
   } catch(_) {}
 
   /* 3. allorigins.win (returns {contents: "..."}) */
   const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(YF_URL + cacheBuster),
-                        { signal: AbortSignal.timeout(ABORT_TIMEOUT + 2000) });
+                        { signal: AbortSignal.timeout(10000) });
   if (!r.ok) throw new Error('VIX: all fetch methods failed');
   const w = await r.json();
   return parseYF(JSON.parse(w.contents));
 }
 
 /* ═══════════════════════════════════════════════
-   RENDER - 使用 DOM 缓存
+   RENDER
 ═══════════════════════════════════════════════ */
 function renderMetrics(spy, qqq, vix) {
   const sc = spy.pct > 0 ? 'up' : spy.pct < 0 ? 'down' : '';
-  DOM['spy-val'].innerHTML = `<span class="${sc}">${fmtP(spy.price)}</span>`;
-  DOM['spy-chg'].innerHTML = `<span class="${sc}">${fmtPct(spy.pct)}</span>`;
+  document.getElementById('spy-val').innerHTML = `<span class="${sc}">${fmtP(spy.price)}</span>`;
+  document.getElementById('spy-chg').innerHTML = `<span class="${sc}">${fmtPct(spy.pct)}</span>`;
 
   const qc = qqq.pct > 0 ? 'up' : qqq.pct < 0 ? 'down' : '';
-  DOM['qqq-val'].innerHTML = `<span class="${qc}">${fmtP(qqq.price)}</span>`;
-  DOM['qqq-chg'].innerHTML = `<span class="${qc}">${fmtPct(qqq.pct)}</span>`;
+  document.getElementById('qqq-val').innerHTML = `<span class="${qc}">${fmtP(qqq.price)}</span>`;
+  document.getElementById('qqq-chg').innerHTML = `<span class="${qc}">${fmtPct(qqq.pct)}</span>`;
 
   const vc = vix.price > 25 ? 'down' : vix.price > 18 ? 'neutral' : 'up';
   const vl = vix.price > 30 ? '极度恐慌 ✦' : vix.price > 25 ? '高波动 ✦ 可入场' : vix.price > 18 ? '中等波动' : '偏低';
-  DOM['vix-val'].innerHTML  = `<span class="${vc}">${fmt(vix.price,1)}</span>`;
-  DOM['vix-sub'].textContent = vl;
+  document.getElementById('vix-val').innerHTML  = `<span class="${vc}">${fmt(vix.price,1)}</span>`;
+  document.getElementById('vix-sub').textContent = vl;
 
-  DOM['spy-strike'].textContent =
+  document.getElementById('spy-strike').textContent =
     `≈ $${(spy.price * 0.93).toFixed(0)} – $${(spy.price * 0.95).toFixed(0)}`;
-  DOM['qqq-strike'].textContent =
+  document.getElementById('qqq-strike').textContent =
     `≈ $${(qqq.price * 0.90).toFixed(0)} – $${(qqq.price * 0.93).toFixed(0)}`;
 }
 
 function renderChecklist(spy, vix) {
   const p = spy.pct;
 
-  const mi = DOM['chk-market-icon'], mv = DOM['chk-market-val'];
+  const mi = document.getElementById('chk-market-icon');
+  const mv = document.getElementById('chk-market-val');
   mv.textContent = `SPY ${fmtPct(p)}`;
   if (p >= -1.5 && p <= -0.5)      { mi.className = 'check-icon ci-pass'; mi.textContent = '✓'; }
   else if (p < -1.5)               { mi.className = 'check-icon ci-warn'; mi.textContent = '!'; mv.textContent += '（跌幅超范围，等待企稳）'; }
   else                             { mi.className = 'check-icon ci-fail'; mi.textContent = '✗'; }
 
-  const vi = DOM['chk-vix-icon'], vv = DOM['chk-vix-val'];
+  const vi = document.getElementById('chk-vix-icon');
+  const vv = document.getElementById('chk-vix-val');
   vv.textContent = `VIX ${fmt(vix.price,1)}`;
   if (vix.price >= 25)             { vi.className = 'check-icon ci-pass'; vi.textContent = '✓'; }
   else if (vix.price >= 20)        { vi.className = 'check-icon ci-warn'; vi.textContent = '!'; vv.textContent += '（偏高但未到理想触发区）'; }
   else                             { vi.className = 'check-icon ci-fail'; vi.textContent = '✗'; vv.textContent += '（波动率偏低，暂不入场）'; }
 
-  const gi = DOM['chk-green-icon'], gv = DOM['chk-green-val'];
+  const gi = document.getElementById('chk-green-icon');
+  const gv = document.getElementById('chk-green-val');
   gv.textContent = `SPY ${fmtPct(p)}`;
   if (p < 0) { gi.className = 'check-icon ci-pass'; gi.textContent = '✓'; }
   else       { gi.className = 'check-icon ci-fail'; gi.textContent = '✗'; gv.textContent += ' — 上涨日禁止入场'; }
@@ -458,8 +435,12 @@ function renderChecklist(spy, vix) {
 
 function renderBanner(spy, vix) {
   const p = spy.pct, v = vix.price;
-  const bn = DOM['banner'], sg = DOM['banner-signal'], rs = DOM['banner-reason'];
-  const ic = DOM['banner-icon'], sv = DOM['signal-val'], ss = DOM['signal-sub'];
+  const bn = document.getElementById('banner');
+  const sg = document.getElementById('banner-signal');
+  const rs = document.getElementById('banner-reason');
+  const ic = document.getElementById('banner-icon');
+  const sv = document.getElementById('signal-val');
+  const ss = document.getElementById('signal-sub');
 
   const mktOk    = p >= -1.5 && p <= -0.5;
   const vixOk    = v >= 20;
@@ -519,29 +500,26 @@ async function loadData() {
     renderMetrics(spy, qqq, vix);
     renderChecklist(spy, vix);
     renderBanner(spy, vix);
-    DOM['live-dot'].className = 'live-dot';
-    DOM['last-update'].textContent =
+    document.getElementById('live-dot').className = 'live-dot';
+    document.getElementById('last-update').textContent =
       '最后更新：' + new Date().toLocaleString('zh-CN');
   } catch(err) {
-    DOM['live-dot'].className = 'live-dot error';
+    document.getElementById('live-dot').className = 'live-dot error';
     showError(err.message + ' — 请检查 Finnhub API Key 是否已填写，或网络是否正常');
     console.error('[Dashboard]', err);
-    const bn = DOM['banner'];
+    const bn = document.getElementById('banner');
     bn.className = 'banner no';
-    DOM['banner-signal'].textContent = '❌ 数据加载失败';
-    DOM['banner-reason'].textContent = err.message;
-    DOM['banner-icon'].textContent   = '⚠️';
+    document.getElementById('banner-signal').textContent = '❌ 数据加载失败';
+    document.getElementById('banner-reason').textContent = err.message;
+    document.getElementById('banner-icon').textContent   = '⚠️';
   }
   setLoading(false);
-  startTimer();
+  startCountdown();
 }
 
-function triggerRefresh() { stopTimer(); loadData(); }
+function triggerRefresh() { clearInterval(cdTimer); loadData(); }
 
-window.addEventListener('DOMContentLoaded', () => {
-  initDOM();
-  loadData();
-});
+window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body>
 </html>
