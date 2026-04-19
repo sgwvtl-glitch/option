@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
 <title>期权收入策略仪表盘</title>
+<link rel="preconnect" href="https://finnhub.io">
+<link rel="preconnect" href="https://query1.finance.yahoo.com">
+<link rel="dns-prefetch" href="https://corsproxy.io">
+<link rel="dns-prefetch" href="https://api.allorigins.win">
 <style>
   :root {
     --bg: #0d0f14;
@@ -30,6 +35,7 @@
     color: var(--text);
     font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
     min-height: 100vh;
+    will-change: auto;
   }
   .nav {
     background: var(--bg2);
@@ -37,11 +43,12 @@
     padding: 0 1.5rem;
     display: flex; align-items: center; justify-content: space-between;
     height: 52px; position: sticky; top: 0; z-index: 100;
+    contain: layout style;
   }
   .nav-logo { font-size: 15px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
   .nav-logo span { color: var(--accent); }
   .nav-right { display: flex; align-items: center; gap: 14px; }
-  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; }
+  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; will-change: opacity; }
   .live-dot.loading { background: var(--amber); }
   .live-dot.error   { background: var(--red); animation: none; }
   @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
@@ -52,15 +59,17 @@
     font-size: 12px; padding: 5px 12px; border-radius: 6px;
     background: var(--bg3); border: 1px solid var(--border2);
     color: var(--text); cursor: pointer; transition: background .15s;
+    will-change: background;
   }
   .refresh-btn:hover { background: var(--blue-bg); border-color: var(--accent); }
   .refresh-btn:disabled { opacity: .4; cursor: default; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; contain: layout style; }
   .banner {
     border-radius: 10px; padding: 1rem 1.25rem;
     margin-bottom: 1.25rem;
     display: flex; align-items: center; justify-content: space-between; gap: 12px;
     border: 1px solid; transition: all .3s;
+    contain: layout style;
   }
   .banner.go   { background: var(--green-bg); border-color: rgba(61,214,140,0.3); }
   .banner.no   { background: var(--red-bg);   border-color: rgba(240,101,101,0.3); }
@@ -71,8 +80,8 @@
   .banner.wait .banner-signal { color: var(--amber); }
   .banner-reason { font-size: 13px; color: var(--muted); margin-top: 3px; }
   .banner-icon { font-size: 28px; }
-  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; }
-  .mc { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .9rem 1rem; }
+  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; contain: layout; }
+  .mc { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .9rem 1rem; contain: layout style; }
   .mc-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
   .mc-val { font-size: 22px; font-weight: 600; }
   .mc-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
@@ -82,8 +91,8 @@
   .up      { color: var(--green); }
   .down    { color: var(--red); }
   .neutral { color: var(--amber); }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; }
-  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; contain: layout; }
+  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; contain: layout style; }
   .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .85rem; }
   .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
   .check-item:last-child { border-bottom: none; }
@@ -96,8 +105,8 @@
   .param-row:last-child { border-bottom: none; }
   .param-k { color: var(--muted); }
   .param-v { font-weight: 600; color: var(--text); }
-  .week { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
-  .day-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .6rem; text-align: center; }
+  .week { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; contain: layout; }
+  .day-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .6rem; text-align: center; contain: layout style; }
   .day-card.today { border-color: var(--accent); background: var(--blue-bg); }
   .day-name { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 5px; }
   .day-card.today .day-name { color: var(--blue); }
@@ -110,7 +119,7 @@
   .badge-r { background: var(--red-bg);   color: var(--red); }
   .badge-a { background: var(--amber-bg); color: var(--amber); }
   .error-box { background: var(--red-bg); border: 1px solid rgba(240,101,101,0.3); border-radius: 8px; padding: .75rem 1rem; font-size: 12px; color: var(--red); margin-bottom: 1rem; display: none; line-height: 1.6; }
-  .skeleton { background: var(--bg3); border-radius: 4px; animation: shimmer 1.4s infinite; display: inline-block; color: transparent; }
+  .skeleton { background: var(--bg3); border-radius: 4px; animation: shimmer 1.4s infinite; display: inline-block; color: transparent; will-change: opacity; }
   @keyframes shimmer { 0%,100%{opacity:.4}50%{opacity:.9} }
   .footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 2rem; line-height: 1.9; }
   .footer a { color: var(--accent); text-decoration: none; }
@@ -257,14 +266,44 @@
 /* ═══════════════════════════════════════════════
    CONFIG
 ═══════════════════════════════════════════════ */
-const FINNHUB_KEY      = 'd7g2qrpr01qqb8ri54kgd7g2qrpr01qqb8ri54l0';   // ← paste your key here
+const FINNHUB_KEY      = 'd7g2qrpr01qqb8ri54kgd7g2qrpr01qqb8ri54l0';
 const REFRESH_SECONDS  = 30;
+
+// Cache DOM references for performance
+const DOM = {};
+function initDOM() {
+  const ids = [
+    'clock', 'countdown', 'refresh-btn', 'live-dot', 'error-box',
+    'banner', 'banner-signal', 'banner-reason', 'banner-icon',
+    'spy-val', 'spy-chg', 'qqq-val', 'qqq-chg', 'vix-val', 'vix-sub',
+    'signal-val', 'signal-sub', 'spy-strike', 'qqq-strike',
+    'chk-market-icon', 'chk-market-val', 'chk-vix-icon', 'chk-vix-val',
+    'chk-green-icon', 'chk-green-val', 'week-plan', 'last-update'
+  ];
+  ids.forEach(id => { 
+    const el = document.getElementById(id);
+    if (!el) {
+      console.warn(`[DOM] Element #${id} not found`);
+    }
+    DOM[id] = el;
+  });
+  
+  // Verify critical elements
+  const criticalIds = ['banner', 'spy-val', 'qqq-val', 'vix-val'];
+  const missing = criticalIds.filter(id => !DOM[id]);
+  if (missing.length > 0) {
+    console.error(`[DOM] Critical elements missing: ${missing.join(', ')}`);
+    return false;
+  }
+  return true;
+}
 
 /* ═══════════════════════════════════════════════
    CLOCK
 ═══════════════════════════════════════════════ */
 function updateClock() {
-  document.getElementById('clock').textContent = new Date().toLocaleString('zh-CN', {
+  const now = new Date();
+  DOM.clock.textContent = now.toLocaleString('zh-CN', {
     month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
   });
 }
@@ -279,30 +318,30 @@ let cdTimer = null, cdLeft = REFRESH_SECONDS;
 function startCountdown() {
   clearInterval(cdTimer);
   cdLeft = REFRESH_SECONDS;
-  const el = document.getElementById('countdown');
   cdTimer = setInterval(() => {
     cdLeft--;
-    el.textContent  = cdLeft + 's';
-    el.className    = 'countdown' + (cdLeft <= 10 ? ' urgent' : '');
+    DOM.countdown.textContent = cdLeft + 's';
+    DOM.countdown.className = 'countdown' + (cdLeft <= 10 ? ' urgent' : '');
     if (cdLeft <= 0) { clearInterval(cdTimer); loadData(); }
   }, 1000);
 }
 
 /* ═══════════════════════════════════════════════
-   WEEKLY PLAN
+   WEEKLY PLAN - Optimized with DocumentFragment
 ═══════════════════════════════════════════════ */
 const DAYS    = ['周一','周二','周三','周四','周五'];
 const ACTIONS = ['开仓建立头寸','红日加仓','最终入场窗口','获利了结','降低风险'];
 
 (function renderWeek() {
-  const todayIdx = new Date().getDay() - 1; // Mon=0
-  const wrap = document.getElementById('week-plan');
+  const todayIdx = new Date().getDay() - 1;
+  const fragment = document.createDocumentFragment();
   DAYS.forEach((d, i) => {
     const el = document.createElement('div');
     el.className = 'day-card' + (i === todayIdx ? ' today' : '');
     el.innerHTML = `<div class="day-name">${d}${i===todayIdx?' ✦':''}</div><div class="day-action">${ACTIONS[i]}</div>`;
-    wrap.appendChild(el);
+    fragment.appendChild(el);
   });
+  DOM.week-plan.appendChild(fragment);
 })();
 
 /* ═══════════════════════════════════════════════
@@ -316,16 +355,14 @@ const fmtPct  = n => {
 };
 
 function setLoading(on) {
-  const btn = document.getElementById('refresh-btn');
-  btn.disabled    = on;
-  btn.textContent = on ? '⟳ ...' : '⟳ 刷新';
-  document.getElementById('live-dot').className = 'live-dot' + (on ? ' loading' : '');
+  DOM['refresh-btn'].disabled = on;
+  DOM['refresh-btn'].textContent = on ? '⟳ ...' : '⟳ 刷新';
+  DOM['live-dot'].className = 'live-dot' + (on ? ' loading' : '');
 }
 
 function showError(msg) {
-  const b = document.getElementById('error-box');
-  b.style.display = msg ? 'block' : 'none';
-  b.textContent   = msg ? '⚠ ' + msg : '';
+  DOM['error-box'].style.display = msg ? 'block' : 'none';
+  DOM['error-box'].textContent   = msg ? '⚠ ' + msg : '';
 }
 
 /* ═══════════════════════════════════════════════
@@ -333,15 +370,31 @@ function showError(msg) {
    GET /api/v1/quote?symbol=X&token=KEY
    { c: price, d: change, dp: pct%, o: open, pc: prevClose }
 ═══════════════════════════════════════════════ */
-async function fetchFinnhub(symbol) {
-  const r = await fetch(
-    `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`,
-    { signal: AbortSignal.timeout(8000) }
-  );
-  if (!r.ok) throw new Error(`Finnhub ${symbol}: HTTP ${r.status}`);
-  const j = await r.json();
-  if (!j.c || j.c === 0) throw new Error(`Finnhub ${symbol}: API key invalid or market closed`);
-  return { price: j.c, change: j.d, pct: j.dp, open: j.o, prevClose: j.pc };
+async function fetchFinnhub(symbol, retries = 2) {
+  let lastErr;
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const r = await fetch(
+        `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`,
+        { signal: AbortSignal.timeout(8000) }
+      );
+      if (!r.ok) throw new Error(`Finnhub ${symbol}: HTTP ${r.status}`);
+      const j = await r.json();
+      
+      // Market closed - return previous close with special flag
+      if (!j.c || j.c === 0 || (j.dp === 0 && j.d === 0)) {
+        console.log(`[Finnhub] ${symbol}: Market appears closed, using previous close`);
+        return { price: j.pc || 0, change: 0, pct: 0, open: j.o, prevClose: j.pc, marketClosed: true };
+      }
+      
+      return { price: j.c, change: j.d, pct: j.dp, open: j.o, prevClose: j.pc, marketClosed: false };
+    } catch (err) {
+      lastErr = err;
+      console.warn(`[Finnhub] ${symbol} attempt ${i + 1} failed:`, err.message);
+      if (i < retries) await new Promise(res => setTimeout(res, 500 * (i + 1)));
+    }
+  }
+  throw lastErr;
 }
 
 /* ═══════════════════════════════════════════════
@@ -361,73 +414,83 @@ function parseYF(j) {
   return { price, pct: prev ? (price - prev) / prev * 100 : null };
 }
 
-async function fetchVIX() {
+async function fetchVIX(retries = 1) {
   // Generate a unique timestamp for every call to bypass cache
   const cacheBuster = `&_=${Date.now()}`;
-  
-  /* 1. direct */
-  try {
-    const r = await fetch(YF_URL + cacheBuster, { signal: AbortSignal.timeout(5000) });
-    if (r.ok) return parseYF(await r.json());
-  } catch(_) {}
+  let lastErr;
 
-  /* 2. corsproxy.io */
-  try {
-    const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(YF_URL + cacheBuster),
-                          { signal: AbortSignal.timeout(8000) });
-    if (r.ok) return parseYF(await r.json());
-  } catch(_) {}
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    /* 1. direct */
+    try {
+      const r = await fetch(YF_URL + cacheBuster, { signal: AbortSignal.timeout(5000) });
+      if (r.ok) return parseYF(await r.json());
+    } catch(_) {}
 
-  /* 3. allorigins.win (returns {contents: "..."}) */
-  const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(YF_URL + cacheBuster),
-                        { signal: AbortSignal.timeout(10000) });
-  if (!r.ok) throw new Error('VIX: all fetch methods failed');
-  const w = await r.json();
-  return parseYF(JSON.parse(w.contents));
+    /* 2. corsproxy.io */
+    try {
+      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(YF_URL + cacheBuster),
+                            { signal: AbortSignal.timeout(8000) });
+      if (r.ok) return parseYF(await r.json());
+    } catch(_) {}
+
+    /* 3. allorigins.win (returns {contents: "..."}) */
+    try {
+      const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(YF_URL + cacheBuster),
+                            { signal: AbortSignal.timeout(10000) });
+      if (!r.ok) throw new Error('VIX: allorigins HTTP ' + r.status);
+      const w = await r.json();
+      return parseYF(JSON.parse(w.contents));
+    } catch(err) {
+      lastErr = err;
+      console.warn(`[VIX] attempt ${attempt + 1} failed:`, err.message);
+      if (attempt < retries) await new Promise(res => setTimeout(res, 800 * (attempt + 1)));
+    }
+  }
+  throw lastErr;
 }
 
 /* ═══════════════════════════════════════════════
-   RENDER
+   RENDER - Optimized with cached DOM references
 ═══════════════════════════════════════════════ */
 function renderMetrics(spy, qqq, vix) {
   const sc = spy.pct > 0 ? 'up' : spy.pct < 0 ? 'down' : '';
-  document.getElementById('spy-val').innerHTML = `<span class="${sc}">${fmtP(spy.price)}</span>`;
-  document.getElementById('spy-chg').innerHTML = `<span class="${sc}">${fmtPct(spy.pct)}</span>`;
+  DOM['spy-val'].innerHTML = `<span class="${sc}">${fmtP(spy.price)}</span>`;
+  DOM['spy-chg'].innerHTML = `<span class="${sc}">${fmtPct(spy.pct)}</span>`;
 
   const qc = qqq.pct > 0 ? 'up' : qqq.pct < 0 ? 'down' : '';
-  document.getElementById('qqq-val').innerHTML = `<span class="${qc}">${fmtP(qqq.price)}</span>`;
-  document.getElementById('qqq-chg').innerHTML = `<span class="${qc}">${fmtPct(qqq.pct)}</span>`;
+  DOM['qqq-val'].innerHTML = `<span class="${qc}">${fmtP(qqq.price)}</span>`;
+  DOM['qqq-chg'].innerHTML = `<span class="${qc}">${fmtPct(qqq.pct)}</span>`;
 
   const vc = vix.price > 25 ? 'down' : vix.price > 18 ? 'neutral' : 'up';
   const vl = vix.price > 30 ? '极度恐慌 ✦' : vix.price > 25 ? '高波动 ✦ 可入场' : vix.price > 18 ? '中等波动' : '偏低';
-  document.getElementById('vix-val').innerHTML  = `<span class="${vc}">${fmt(vix.price,1)}</span>`;
-  document.getElementById('vix-sub').textContent = vl;
+  DOM['vix-val'].innerHTML  = `<span class="${vc}">${fmt(vix.price,1)}</span>`;
+  DOM['vix-sub'].textContent = vl;
 
-  document.getElementById('spy-strike').textContent =
+  DOM['spy-strike'].textContent =
     `≈ $${(spy.price * 0.93).toFixed(0)} – $${(spy.price * 0.95).toFixed(0)}`;
-  document.getElementById('qqq-strike').textContent =
+  DOM['qqq-strike'].textContent =
     `≈ $${(qqq.price * 0.90).toFixed(0)} – $${(qqq.price * 0.93).toFixed(0)}`;
 }
 
 function renderChecklist(spy, vix) {
   const p = spy.pct;
 
-  const mi = document.getElementById('chk-market-icon');
-  const mv = document.getElementById('chk-market-val');
+  const mi = DOM['chk-market-icon'];
+  const mv = DOM['chk-market-val'];
   mv.textContent = `SPY ${fmtPct(p)}`;
   if (p >= -1.5 && p <= -0.5)      { mi.className = 'check-icon ci-pass'; mi.textContent = '✓'; }
   else if (p < -1.5)               { mi.className = 'check-icon ci-warn'; mi.textContent = '!'; mv.textContent += '（跌幅超范围，等待企稳）'; }
   else                             { mi.className = 'check-icon ci-fail'; mi.textContent = '✗'; }
 
-  const vi = document.getElementById('chk-vix-icon');
-  const vv = document.getElementById('chk-vix-val');
+  const vi = DOM['chk-vix-icon'];
+  const vv = DOM['chk-vix-val'];
   vv.textContent = `VIX ${fmt(vix.price,1)}`;
   if (vix.price >= 25)             { vi.className = 'check-icon ci-pass'; vi.textContent = '✓'; }
   else if (vix.price >= 20)        { vi.className = 'check-icon ci-warn'; vi.textContent = '!'; vv.textContent += '（偏高但未到理想触发区）'; }
   else                             { vi.className = 'check-icon ci-fail'; vi.textContent = '✗'; vv.textContent += '（波动率偏低，暂不入场）'; }
 
-  const gi = document.getElementById('chk-green-icon');
-  const gv = document.getElementById('chk-green-val');
+  const gi = DOM['chk-green-icon'];
+  const gv = DOM['chk-green-val'];
   gv.textContent = `SPY ${fmtPct(p)}`;
   if (p < 0) { gi.className = 'check-icon ci-pass'; gi.textContent = '✓'; }
   else       { gi.className = 'check-icon ci-fail'; gi.textContent = '✗'; gv.textContent += ' — 上涨日禁止入场'; }
@@ -435,12 +498,12 @@ function renderChecklist(spy, vix) {
 
 function renderBanner(spy, vix) {
   const p = spy.pct, v = vix.price;
-  const bn = document.getElementById('banner');
-  const sg = document.getElementById('banner-signal');
-  const rs = document.getElementById('banner-reason');
-  const ic = document.getElementById('banner-icon');
-  const sv = document.getElementById('signal-val');
-  const ss = document.getElementById('signal-sub');
+  const bn = DOM.banner;
+  const sg = DOM['banner-signal'];
+  const rs = DOM['banner-reason'];
+  const ic = DOM['banner-icon'];
+  const sv = DOM['signal-val'];
+  const ss = DOM['signal-sub'];
 
   const mktOk    = p >= -1.5 && p <= -0.5;
   const vixOk    = v >= 20;
@@ -491,27 +554,49 @@ function renderBanner(spy, vix) {
 async function loadData() {
   setLoading(true);
   showError('');
+  
+  let loadTimeout = null;
+  
+  // Add timeout for entire data load operation
+  const timeoutPromise = new Promise((_, reject) => {
+    loadTimeout = setTimeout(() => {
+      reject(new Error('数据加载超时，请检查网络连接'));
+    }, 25000);
+  });
+
   try {
-    const [spy, qqq, vix] = await Promise.all([
-      fetchFinnhub('SPY'),
-      fetchFinnhub('QQQ'),
-      fetchVIX()
+    const [spy, qqq, vix] = await Promise.race([
+      Promise.all([
+        fetchFinnhub('SPY'),
+        fetchFinnhub('QQQ'),
+        fetchVIX()
+      ]),
+      timeoutPromise
     ]);
+    
+    clearTimeout(loadTimeout);
+    
+    // Validate data before rendering
+    if (!spy.price || !qqq.price || !vix.price) {
+      throw new Error('获取的数据不完整，请重试');
+    }
+    
     renderMetrics(spy, qqq, vix);
     renderChecklist(spy, vix);
     renderBanner(spy, vix);
-    document.getElementById('live-dot').className = 'live-dot';
-    document.getElementById('last-update').textContent =
+    DOM['live-dot'].className = 'live-dot';
+    DOM['last-update'].textContent =
       '最后更新：' + new Date().toLocaleString('zh-CN');
   } catch(err) {
-    document.getElementById('live-dot').className = 'live-dot error';
-    showError(err.message + ' — 请检查 Finnhub API Key 是否已填写，或网络是否正常');
+    if (loadTimeout) clearTimeout(loadTimeout);
+    DOM['live-dot'].className = 'live-dot error';
+    const errorMsg = err.message + ' — 请检查 Finnhub API Key 是否已填写，或网络是否正常';
+    showError(errorMsg);
     console.error('[Dashboard]', err);
-    const bn = document.getElementById('banner');
-    bn.className = 'banner no';
-    document.getElementById('banner-signal').textContent = '❌ 数据加载失败';
-    document.getElementById('banner-reason').textContent = err.message;
-    document.getElementById('banner-icon').textContent   = '⚠️';
+    DOM.banner.className = 'banner no';
+    DOM['banner-signal'].textContent = '❌ 数据加载失败';
+    DOM['banner-reason'].textContent = err.message;
+    DOM['banner-icon'].textContent   = '⚠️';
   }
   setLoading(false);
   startCountdown();
@@ -519,7 +604,25 @@ async function loadData() {
 
 function triggerRefresh() { clearInterval(cdTimer); loadData(); }
 
-window.addEventListener('DOMContentLoaded', loadData);
+// Initialize DOM cache and start
+window.addEventListener('DOMContentLoaded', () => {
+  const domReady = initDOM();
+  
+  if (!domReady) {
+    console.error('[Dashboard] DOM initialization failed, retrying...');
+    setTimeout(() => {
+      const retry = initDOM();
+      if (retry) {
+        loadData();
+      } else {
+        showError('页面初始化失败，请刷新页面重试');
+      }
+    }, 500);
+  } else {
+    console.log('[Dashboard] DOM initialized successfully');
+    loadData();
+  }
+});
 </script>
 </body>
 </html>
