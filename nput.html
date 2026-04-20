@@ -374,12 +374,14 @@ async function fetchFinnhub(symbol, retries = 2) {
   let lastErr;
   for (let i = 0; i <= retries; i++) {
     try {
+      console.log(`[Finnhub] Fetching ${symbol} (attempt ${i + 1})...`);
       const r = await fetch(
         `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`,
         { signal: AbortSignal.timeout(8000) }
       );
       if (!r.ok) throw new Error(`Finnhub ${symbol}: HTTP ${r.status}`);
       const j = await r.json();
+      console.log(`[Finnhub] ${symbol} response:`, j);
       
       // Market closed - return previous close with special flag
       if (!j.c || j.c === 0 || (j.dp === 0 && j.d === 0)) {
@@ -387,7 +389,9 @@ async function fetchFinnhub(symbol, retries = 2) {
         return { price: j.pc || 0, change: 0, pct: 0, open: j.o, prevClose: j.pc, marketClosed: true };
       }
       
-      return { price: j.c, change: j.d, pct: j.dp, open: j.o, prevClose: j.pc, marketClosed: false };
+      const result = { price: j.c, change: j.d, pct: j.dp, open: j.o, prevClose: j.pc, marketClosed: false };
+      console.log(`[Finnhub] ${symbol} parsed:`, result);
+      return result;
     } catch (err) {
       lastErr = err;
       console.warn(`[Finnhub] ${symbol} attempt ${i + 1} failed:`, err.message);
@@ -483,23 +487,35 @@ async function fetchVIX(retries = 2) {
    RENDER - Optimized with cached DOM references
 ═══════════════════════════════════════════════ */
 function renderMetrics(spy, qqq, vix) {
+  console.log('[Render] Rendering metrics with:', { spy, qqq, vix });
+  console.log('[Render] DOM elements:', { 
+    'spy-val': DOM['spy-val'], 
+    'qqq-val': DOM['qqq-val'],
+    'spy-chg': DOM['spy-chg'],
+    'qqq-chg': DOM['qqq-chg']
+  });
+  
   const sc = spy.pct > 0 ? 'up' : spy.pct < 0 ? 'down' : '';
   DOM['spy-val'].innerHTML = `<span class="${sc}">${fmtP(spy.price)}</span>`;
   DOM['spy-chg'].innerHTML = `<span class="${sc}">${fmtPct(spy.pct)}</span>`;
-
+  console.log('[Render] After SPY update - spy-val:', DOM['spy-val'].innerHTML);
+  
   const qc = qqq.pct > 0 ? 'up' : qqq.pct < 0 ? 'down' : '';
   DOM['qqq-val'].innerHTML = `<span class="${qc}">${fmtP(qqq.price)}</span>`;
   DOM['qqq-chg'].innerHTML = `<span class="${qc}">${fmtPct(qqq.pct)}</span>`;
-
+  console.log('[Render] After QQQ update - qqq-val:', DOM['qqq-val'].innerHTML);
+  
   const vc = vix.price > 25 ? 'down' : vix.price > 18 ? 'neutral' : 'up';
   const vl = vix.price > 30 ? '极度恐慌 ✦' : vix.price > 25 ? '高波动 ✦ 可入场' : vix.price > 18 ? '中等波动' : '偏低';
   DOM['vix-val'].innerHTML  = `<span class="${vc}">${fmt(vix.price,1)}</span>`;
   DOM['vix-sub'].textContent = vl;
-
+  
   DOM['spy-strike'].textContent =
     `≈ $${(spy.price * 0.93).toFixed(0)} – $${(spy.price * 0.95).toFixed(0)}`;
   DOM['qqq-strike'].textContent =
     `≈ $${(qqq.price * 0.90).toFixed(0)} – $${(qqq.price * 0.93).toFixed(0)}`;
+  
+  console.log('[Render] Metrics rendering complete');
 }
 
 function renderChecklist(spy, vix) {
