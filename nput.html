@@ -1,700 +1,1108 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta http-equiv="X-UA-Compatible" content="IE=edge">
-<title>期权收入策略仪表盘</title>
-<link rel="preconnect" href="https://finnhub.io">
-<link rel="preconnect" href="https://query1.finance.yahoo.com">
-<link rel="dns-prefetch" href="https://corsproxy.io">
-<link rel="dns-prefetch" href="https://api.allorigins.win">
-<style>
-  :root {
-    --bg: #0d0f14;
-    --bg2: #161920;
-    --bg3: #1e222c;
-    --border: rgba(255,255,255,0.07);
-    --border2: rgba(255,255,255,0.13);
-    --text: #e8eaf0;
-    --muted: #7a8094;
-    --green: #3dd68c;
-    --green-bg: rgba(61,214,140,0.10);
-    --red: #f06565;
-    --red-bg: rgba(240,101,101,0.10);
-    --amber: #f0b429;
-    --amber-bg: rgba(240,180,41,0.10);
-    --blue: #5b9cf6;
-    --blue-bg: rgba(91,156,246,0.10);
-    --accent: #5b9cf6;
-    font-size: 15px;
-  }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    background: var(--bg);
-    color: var(--text);
-    font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
-    min-height: 100vh;
-    will-change: auto;
-  }
-  .nav {
-    background: var(--bg2);
-    border-bottom: 1px solid var(--border);
-    padding: 0 1.5rem;
-    display: flex; align-items: center; justify-content: space-between;
-    height: 52px; position: sticky; top: 0; z-index: 100;
-    contain: layout style;
-  }
-  .nav-logo { font-size: 15px; font-weight: 600; color: var(--text); display: flex; align-items: center; gap: 8px; }
-  .nav-logo span { color: var(--accent); }
-  .nav-right { display: flex; align-items: center; gap: 14px; }
-  .live-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); animation: blink 2s infinite; will-change: opacity; }
-  .live-dot.loading { background: var(--amber); }
-  .live-dot.error   { background: var(--red); animation: none; }
-  @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
-  .nav-time { font-size: 12px; color: var(--muted); }
-  .countdown { font-size: 12px; color: var(--muted); background: var(--bg3); padding: 3px 9px; border-radius: 5px; border: 1px solid var(--border2); }
-  .countdown.urgent { color: var(--amber); border-color: rgba(240,180,41,0.3); }
-  .refresh-btn {
-    font-size: 12px; padding: 5px 12px; border-radius: 6px;
-    background: var(--bg3); border: 1px solid var(--border2);
-    color: var(--text); cursor: pointer; transition: background .15s;
-    will-change: background;
-  }
-  .refresh-btn:hover { background: var(--blue-bg); border-color: var(--accent); }
-  .refresh-btn:disabled { opacity: .4; cursor: default; }
-  .wrap { max-width: 960px; margin: 0 auto; padding: 1.5rem 1.25rem 3rem; contain: layout style; }
-  .banner {
-    border-radius: 10px; padding: 1rem 1.25rem;
-    margin-bottom: 1.25rem;
-    display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    border: 1px solid; transition: all .3s;
-    contain: layout style;
-  }
-  .banner.go   { background: var(--green-bg); border-color: rgba(61,214,140,0.3); }
-  .banner.no   { background: var(--red-bg);   border-color: rgba(240,101,101,0.3); }
-  .banner.wait { background: var(--amber-bg); border-color: rgba(240,180,41,0.3); }
-  .banner-signal { font-size: 20px; font-weight: 700; }
-  .banner.go   .banner-signal { color: var(--green); }
-  .banner.no   .banner-signal { color: var(--red); }
-  .banner.wait .banner-signal { color: var(--amber); }
-  .banner-reason { font-size: 13px; color: var(--muted); margin-top: 3px; }
-  .banner-icon { font-size: 28px; }
-  .metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 1.25rem; contain: layout; }
-  .mc { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: .9rem 1rem; contain: layout style; }
-  .mc-label { font-size: 11px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 6px; }
-  .mc-val { font-size: 22px; font-weight: 600; }
-  .mc-sub { font-size: 11px; color: var(--muted); margin-top: 3px; }
-  .mc-src { font-size: 10px; padding: 1px 5px; border-radius: 3px; display: inline-block; margin-top: 5px; }
-  .src-fh { background: rgba(91,156,246,0.15); color: var(--blue); }
-  .src-yf { background: rgba(240,120,60,0.13); color: #f09070; }
-  .up      { color: var(--green); }
-  .down    { color: var(--red); }
-  .neutral { color: var(--amber); }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 1.25rem; contain: layout; }
-  .card { background: var(--bg2); border: 1px solid var(--border); border-radius: 10px; padding: 1rem 1.25rem; contain: layout style; }
-  .card-title { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .06em; margin-bottom: .85rem; }
-  .check-item { display: flex; align-items: flex-start; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .check-item:last-child { border-bottom: none; }
-  .check-icon { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; margin-top: 1px; font-weight: 700; }
-  .ci-pass    { background: var(--green-bg); color: var(--green); }
-  .ci-fail    { background: var(--red-bg);   color: var(--red); }
-  .ci-warn    { background: var(--amber-bg); color: var(--amber); }
-  .ci-unknown { background: var(--bg3);      color: var(--muted); }
-  .param-row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
-  .param-row:last-child { border-bottom: none; }
-  .param-k { color: var(--muted); }
-  .param-v { font-weight: 600; color: var(--text); }
-  .week { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; contain: layout; }
-  .day-card { background: var(--bg3); border: 1px solid var(--border); border-radius: 10px; padding: .7rem .6rem; text-align: center; contain: layout style; }
-  .day-card.today { border-color: var(--accent); background: var(--blue-bg); }
-  .day-name { font-size: 10px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin-bottom: 5px; }
-  .day-card.today .day-name { color: var(--blue); }
-  .day-action { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.4; }
-  .day-card.today .day-action { color: var(--blue); }
-  .assess-item { display: flex; gap: 10px; align-items: flex-start; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.5; }
-  .assess-item:last-child { border-bottom: none; }
-  .badge { font-size: 10px; padding: 2px 8px; border-radius: 20px; font-weight: 700; flex-shrink: 0; margin-top: 2px; letter-spacing: .03em; }
-  .badge-g { background: var(--green-bg); color: var(--green); }
-  .badge-r { background: var(--red-bg);   color: var(--red); }
-  .badge-a { background: var(--amber-bg); color: var(--amber); }
-  .error-box { background: var(--red-bg); border: 1px solid rgba(240,101,101,0.3); border-radius: 8px; padding: .75rem 1rem; font-size: 12px; color: var(--red); margin-bottom: 1rem; display: none; line-height: 1.6; }
-  .skeleton { background: var(--bg3); border-radius: 4px; animation: shimmer 1.4s infinite; display: inline-block; color: transparent; will-change: opacity; }
-  @keyframes shimmer { 0%,100%{opacity:.4}50%{opacity:.9} }
-  .footer { text-align: center; font-size: 11px; color: var(--muted); margin-top: 2rem; line-height: 1.9; }
-  .footer a { color: var(--accent); text-decoration: none; }
-  @media(max-width:640px){
-    .metrics { grid-template-columns: 1fr 1fr; }
-    .grid2   { grid-template-columns: 1fr; }
-    .week    { gap: 5px; }
-    .day-action { font-size: 10px; }
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>期权收入策略仪表盘</title>
+  <link rel="preconnect" href="https://finnhub.io">
+  <link rel="preconnect" href="https://query1.finance.yahoo.com">
+  <link rel="dns-prefetch" href="https://corsproxy.io">
+  <link rel="dns-prefetch" href="https://api.allorigins.win">
+  <style>
+    :root {
+      --bg: #0d0f14;
+      --bg2: #161920;
+      --bg3: #1e222c;
+      --border: rgba(255, 255, 255, 0.07);
+      --border2: rgba(255, 255, 255, 0.13);
+      --text: #e8eaf0;
+      --muted: #7a8094;
+      --green: #3dd68c;
+      --green-bg: rgba(61, 214, 140, 0.10);
+      --red: #f06565;
+      --red-bg: rgba(240, 101, 101, 0.10);
+      --amber: #f0b429;
+      --amber-bg: rgba(240, 180, 41, 0.10);
+      --blue: #5b9cf6;
+      --blue-bg: rgba(91, 156, 246, 0.10);
+      --accent: #5b9cf6;
+      font-size: 15px;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      min-height: 100vh;
+      will-change: auto;
+    }
+
+    .nav {
+      background: var(--bg2);
+      border-bottom: 1px solid var(--border);
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 52px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      contain: layout style;
+    }
+
+    .nav-logo {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .nav-logo span {
+      color: var(--accent);
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .live-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--green);
+      animation: blink 2s infinite;
+      will-change: opacity;
+    }
+
+    .live-dot.loading {
+      background: var(--amber);
+    }
+
+    .live-dot.error {
+      background: var(--red);
+      animation: none;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: .3
+      }
+    }
+
+    .nav-time {
+      font-size: 12px;
+      color: var(--muted);
+    }
+
+    .countdown {
+      font-size: 12px;
+      color: var(--muted);
+      background: var(--bg3);
+      padding: 3px 9px;
+      border-radius: 5px;
+      border: 1px solid var(--border2);
+    }
+
+    .countdown.urgent {
+      color: var(--amber);
+      border-color: rgba(240, 180, 41, 0.3);
+    }
+
+    .refresh-btn {
+      font-size: 12px;
+      padding: 5px 12px;
+      border-radius: 6px;
+      background: var(--bg3);
+      border: 1px solid var(--border2);
+      color: var(--text);
+      cursor: pointer;
+      transition: background .15s;
+      will-change: background;
+    }
+
+    .refresh-btn:hover {
+      background: var(--blue-bg);
+      border-color: var(--accent);
+    }
+
+    .refresh-btn:disabled {
+      opacity: .4;
+      cursor: default;
+    }
+
+    .wrap {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 1.5rem 1.25rem 3rem;
+      contain: layout style;
+    }
+
+    .banner {
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border: 1px solid;
+      transition: all .3s;
+      contain: layout style;
+    }
+
+    .banner.go {
+      background: var(--green-bg);
+      border-color: rgba(61, 214, 140, 0.3);
+    }
+
+    .banner.no {
+      background: var(--red-bg);
+      border-color: rgba(240, 101, 101, 0.3);
+    }
+
+    .banner.wait {
+      background: var(--amber-bg);
+      border-color: rgba(240, 180, 41, 0.3);
+    }
+
+    .banner-signal {
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .banner.go .banner-signal {
+      color: var(--green);
+    }
+
+    .banner.no .banner-signal {
+      color: var(--red);
+    }
+
+    .banner.wait .banner-signal {
+      color: var(--amber);
+    }
+
+    .banner-reason {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .banner-icon {
+      font-size: 28px;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 1.25rem;
+      contain: layout;
+    }
+
+    .mc {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .9rem 1rem;
+      contain: layout style;
+    }
+
+    .mc-label {
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+
+    .mc-val {
+      font-size: 22px;
+      font-weight: 600;
+    }
+
+    .mc-sub {
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 3px;
+    }
+
+    .mc-src {
+      font-size: 10px;
+      padding: 1px 5px;
+      border-radius: 3px;
+      display: inline-block;
+      margin-top: 5px;
+    }
+
+    .src-fh {
+      background: rgba(91, 156, 246, 0.15);
+      color: var(--blue);
+    }
+
+    .src-yf {
+      background: rgba(240, 120, 60, 0.13);
+      color: #f09070;
+    }
+
+    .up {
+      color: var(--green);
+    }
+
+    .down {
+      color: var(--red);
+    }
+
+    .neutral {
+      color: var(--amber);
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 1.25rem;
+      contain: layout;
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      contain: layout style;
+    }
+
+    .card-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: .85rem;
+    }
+
+    .check-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .check-item:last-child {
+      border-bottom: none;
+    }
+
+    .check-icon {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 10px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-weight: 700;
+    }
+
+    .ci-pass {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .ci-fail {
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    .ci-warn {
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+
+    .ci-unknown {
+      background: var(--bg3);
+      color: var(--muted);
+    }
+
+    .param-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 6px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+    }
+
+    .param-row:last-child {
+      border-bottom: none;
+    }
+
+    .param-k {
+      color: var(--muted);
+    }
+
+    .param-v {
+      font-weight: 600;
+      color: var(--text);
+    }
+
+    .week {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 8px;
+      contain: layout;
+    }
+
+    .day-card {
+      background: var(--bg3);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: .7rem .6rem;
+      text-align: center;
+      contain: layout style;
+    }
+
+    .day-card.today {
+      border-color: var(--accent);
+      background: var(--blue-bg);
+    }
+
+    .day-name {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+
+    .day-card.today .day-name {
+      color: var(--blue);
+    }
+
+    .day-action {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      line-height: 1.4;
+    }
+
+    .day-card.today .day-action {
+      color: var(--blue);
+    }
+
+    .assess-item {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      line-height: 1.5;
+    }
+
+    .assess-item:last-child {
+      border-bottom: none;
+    }
+
+    .badge {
+      font-size: 10px;
+      padding: 2px 8px;
+      border-radius: 20px;
+      font-weight: 700;
+      flex-shrink: 0;
+      margin-top: 2px;
+      letter-spacing: .03em;
+    }
+
+    .badge-g {
+      background: var(--green-bg);
+      color: var(--green);
+    }
+
+    .badge-r {
+      background: var(--red-bg);
+      color: var(--red);
+    }
+
+    .badge-a {
+      background: var(--amber-bg);
+      color: var(--amber);
+    }
+
+    .error-box {
+      background: var(--red-bg);
+      border: 1px solid rgba(240, 101, 101, 0.3);
+      border-radius: 8px;
+      padding: .75rem 1rem;
+      font-size: 12px;
+      color: var(--red);
+      margin-bottom: 1rem;
+      display: none;
+      line-height: 1.6;
+    }
+
+    .skeleton {
+      background: var(--bg3);
+      border-radius: 4px;
+      animation: shimmer 1.4s infinite;
+      display: inline-block;
+      color: transparent;
+      will-change: opacity;
+    }
+
+    @keyframes shimmer {
+
+      0%,
+      100% {
+        opacity: .4
+      }
+
+      50% {
+        opacity: .9
+      }
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 2rem;
+      line-height: 1.9;
+    }
+
+    .footer a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    @media(max-width:640px) {
+      .metrics {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .grid2 {
+        grid-template-columns: 1fr;
+      }
+
+      .week {
+        gap: 5px;
+      }
+
+      .day-action {
+        font-size: 10px;
+      }
+    }
+  </style>
 </head>
+
 <body>
 
-<nav class="nav">
-  <div class="nav-logo"><span>⬡</span> 期权收入策略仪表盘</div>
-  <div class="nav-right">
-    <div class="live-dot" id="live-dot"></div>
-    <span class="nav-time" id="clock">--</span>
-    <span class="countdown" id="countdown">30s</span>
-    <button class="refresh-btn" id="refresh-btn" onclick="triggerRefresh()">⟳ 刷新</button>
-  </div>
-</nav>
-
-<div class="wrap">
-
-  <div class="error-box" id="error-box"></div>
-
-  <!-- SIGNAL BANNER -->
-  <div class="banner wait" id="banner">
-    <div>
-      <div class="banner-signal" id="banner-signal">⏳ 加载中...</div>
-      <div class="banner-reason" id="banner-reason">正在从 Finnhub &amp; Yahoo Finance 获取数据</div>
+  <nav class="nav">
+    <div class="nav-logo"><span>⬡</span> 期权收入策略仪表盘</div>
+    <div class="nav-right">
+      <div class="live-dot" id="live-dot"></div>
+      <span class="nav-time" id="clock">--</span>
+      <span class="countdown" id="countdown">30s</span>
+      <button class="refresh-btn" id="refresh-btn" onclick="triggerRefresh()">⟳ 刷新</button>
     </div>
-    <div class="banner-icon" id="banner-icon">📡</div>
-  </div>
+  </nav>
 
-  <!-- METRICS -->
-  <div class="metrics">
-    <div class="mc">
-      <div class="mc-label">SPY</div>
-      <div class="mc-val" id="spy-val"><span class="skeleton">$000.00</span></div>
-      <div class="mc-sub" id="spy-chg">--</div>
-      <span class="mc-src src-fh">Finnhub</span>
+  <div class="wrap">
+
+    <div class="error-box" id="error-box"></div>
+
+    <!-- SIGNAL BANNER -->
+    <div class="banner wait" id="banner">
+      <div>
+        <div class="banner-signal" id="banner-signal">⏳ 加载中...</div>
+        <div class="banner-reason" id="banner-reason">正在从 Finnhub &amp; Yahoo Finance 获取数据</div>
+      </div>
+      <div class="banner-icon" id="banner-icon">📡</div>
     </div>
-    <div class="mc">
-      <div class="mc-label">QQQ</div>
-      <div class="mc-val" id="qqq-val"><span class="skeleton">$000.00</span></div>
-      <div class="mc-sub" id="qqq-chg">--</div>
-      <span class="mc-src src-fh">Finnhub</span>
+
+    <!-- METRICS -->
+    <div class="metrics">
+      <div class="mc">
+        <div class="mc-label">SPY</div>
+        <div class="mc-val" id="spy-val"><span class="skeleton">$000.00</span></div>
+        <div class="mc-sub" id="spy-chg">--</div>
+        <span class="mc-src src-fh">Finnhub</span>
+      </div>
+      <div class="mc">
+        <div class="mc-label">QQQ</div>
+        <div class="mc-val" id="qqq-val"><span class="skeleton">$000.00</span></div>
+        <div class="mc-sub" id="qqq-chg">--</div>
+        <span class="mc-src src-fh">Finnhub</span>
+      </div>
+      <div class="mc">
+        <div class="mc-label">VIX 恐慌指数</div>
+        <div class="mc-val" id="vix-val"><span class="skeleton">00.00</span></div>
+        <div class="mc-sub" id="vix-sub">--</div>
+        <span class="mc-src src-yf">Yahoo Finance</span>
+      </div>
+      <div class="mc">
+        <div class="mc-label">入场信号</div>
+        <div class="mc-val" id="signal-val" style="font-size:14px;">--</div>
+        <div class="mc-sub" id="signal-sub">等待数据</div>
+      </div>
     </div>
-    <div class="mc">
-      <div class="mc-label">VIX 恐慌指数</div>
-      <div class="mc-val" id="vix-val"><span class="skeleton">00.00</span></div>
-      <div class="mc-sub" id="vix-sub">--</div>
-      <span class="mc-src src-yf">Yahoo Finance</span>
+
+    <!-- ENTRY CHECKLIST -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-title">今日入场条件核查</div>
+      <div class="check-item">
+        <div class="check-icon ci-unknown" id="chk-market-icon">?</div>
+        <div><strong>市场下跌幅度</strong>：需 -0.5% 至 -1.5%&nbsp;&nbsp;<span id="chk-market-val"
+            style="color:var(--muted);font-size:12px;"></span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon ci-unknown" id="chk-vix-icon">?</div>
+        <div><strong>波动率上升</strong>：VIX &gt; 20 偏高，&gt; 25 为理想触发区&nbsp;&nbsp;<span id="chk-vix-val"
+            style="color:var(--muted);font-size:12px;"></span></div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon ci-warn">!</div>
+        <div><strong>日内企稳信号</strong>：需人工确认 — 观察抛售后价格是否趋稳，成交量是否缩小</div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon ci-unknown" id="chk-green-icon">?</div>
+        <div><strong>非绿色日</strong>：市场上涨日严禁入场&nbsp;&nbsp;<span id="chk-green-val"
+            style="color:var(--muted);font-size:12px;"></span></div>
+      </div>
     </div>
-    <div class="mc">
-      <div class="mc-label">入场信号</div>
-      <div class="mc-val" id="signal-val" style="font-size:14px;">--</div>
-      <div class="mc-sub" id="signal-sub">等待数据</div>
+
+    <!-- WEEKLY PLAN -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-title">本周操作计划</div>
+      <div class="week" id="week-plan"></div>
     </div>
-  </div>
 
-  <!-- ENTRY CHECKLIST -->
-  <div class="card" style="margin-bottom:1.25rem;">
-    <div class="card-title">今日入场条件核查</div>
-    <div class="check-item">
-      <div class="check-icon ci-unknown" id="chk-market-icon">?</div>
-      <div><strong>市场下跌幅度</strong>：需 -0.5% 至 -1.5%&nbsp;&nbsp;<span id="chk-market-val" style="color:var(--muted);font-size:12px;"></span></div>
+    <!-- PARAMS -->
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">SPY 价差参数</div>
+        <div class="param-row"><span class="param-k">到期日 (DTE)</span><span class="param-v">30–45 天</span></div>
+        <div class="param-row"><span class="param-k">Delta 范围</span><span class="param-v">0.15 – 0.20</span></div>
+        <div class="param-row"><span class="param-k">虚值距离</span><span class="param-v">5–7%</span></div>
+        <div class="param-row"><span class="param-k">价差宽度</span><span class="param-v">10 点</span></div>
+        <div class="param-row"><span class="param-k">参考行权价区间</span><span class="param-v" id="spy-strike">--</span></div>
+      </div>
+      <div class="card">
+        <div class="card-title">QQQ 价差参数</div>
+        <div class="param-row"><span class="param-k">到期日 (DTE)</span><span class="param-v">30–45 天</span></div>
+        <div class="param-row"><span class="param-k">Delta 范围</span><span class="param-v">0.10 – 0.18</span></div>
+        <div class="param-row"><span class="param-k">虚值距离</span><span class="param-v">7–10%</span></div>
+        <div class="param-row"><span class="param-k">价差宽度</span><span class="param-v">10–15 点</span></div>
+        <div class="param-row"><span class="param-k">参考行权价区间</span><span class="param-v" id="qqq-strike">--</span></div>
+      </div>
     </div>
-    <div class="check-item">
-      <div class="check-icon ci-unknown" id="chk-vix-icon">?</div>
-      <div><strong>波动率上升</strong>：VIX &gt; 20 偏高，&gt; 25 为理想触发区&nbsp;&nbsp;<span id="chk-vix-val" style="color:var(--muted);font-size:12px;"></span></div>
+
+    <!-- RISK RULES -->
+    <div class="card" style="margin-bottom:1.25rem; margin-top:12px;">
+      <div class="card-title">风险管理规则</div>
+      <div class="check-item">
+        <div class="check-icon ci-pass">✓</div>
+        <div>单笔最大风险 ≤ 账户总值的 <strong>5%</strong></div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon ci-pass">✓</div>
+        <div>达到 <strong>50% 盈利</strong>时立即平仓，不等到到期</div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon ci-warn">!</div>
+        <div>亏损达 <strong>2× 收取权利金</strong>时强制止损</div>
+      </div>
+      <div class="check-item">
+        <div class="check-icon ci-warn">!</div>
+        <div>下跌行情中<strong>优先减少 QQQ 敞口</strong></div>
+      </div>
     </div>
-    <div class="check-item">
-      <div class="check-icon ci-warn">!</div>
-      <div><strong>日内企稳信号</strong>：需人工确认 — 观察抛售后价格是否趋稳，成交量是否缩小</div>
+
+    <!-- ASSESSMENT -->
+    <div class="card" style="margin-bottom:1.25rem;">
+      <div class="card-title">策略评估</div>
+      <div class="assess-item"><span class="badge badge-g">优点</span><span>卖出虚值看跌价差，最大亏损锁定为价差宽度，风险有限可量化。</span></div>
+      <div class="assess-item"><span class="badge badge-g">优点</span><span>只在市场下跌 + VIX
+          跳升时入场，确保权利金足够丰厚，避免低波环境卖便宜货。</span></div>
+      <div class="assess-item"><span class="badge badge-g">优点</span><span>50% 获利了结是业内黄金法则，持仓时间减半，有效降低 Gamma
+          和事件风险。</span></div>
+      <div class="assess-item"><span class="badge badge-g">优点</span><span>2× 止损规则清晰，配合 5% 仓位上限，账户单次回撤可控。</span></div>
+      <div class="assess-item"><span class="badge badge-a">注意</span><span>VIX 需达 20–25+ 才值得入场，VIX &lt; 18
+          时权利金稀薄，风险回报比不佳。</span></div>
+      <div class="assess-item"><span class="badge badge-a">注意</span><span>30–45 DTE 窗口可能跨越 FOMC / CPI /
+          财报季，入场前务必检查经济日历。</span></div>
+      <div class="assess-item"><span class="badge badge-r">风险</span><span>连续大跌行情会连续触发止损，需严格执行单笔 5% 风险上限，切勿加仓摊平。</span>
+      </div>
+      <div class="assess-item"><span class="badge badge-r">风险</span><span>SPY + QQQ 相关性极高，系统性下跌时两腿同时受压，非真正的敞口分散。</span>
+      </div>
     </div>
-    <div class="check-item">
-      <div class="check-icon ci-unknown" id="chk-green-icon">?</div>
-      <div><strong>非绿色日</strong>：市场上涨日严禁入场&nbsp;&nbsp;<span id="chk-green-val" style="color:var(--muted);font-size:12px;"></span></div>
+
+    <div class="footer">
+      行情：<a href="https://finnhub.io" target="_blank">Finnhub</a>（SPY / QQQ）&nbsp;+&nbsp;
+      <a href="https://finance.yahoo.com/quote/%5EVIX" target="_blank">Yahoo Finance</a>（VIX）
+      &nbsp;|&nbsp; 每 <strong>30 秒</strong>自动刷新
+      &nbsp;|&nbsp; 本页仅供参考，不构成投资建议<br>
+      <span id="last-update">--</span>
     </div>
-  </div>
 
-  <!-- WEEKLY PLAN -->
-  <div class="card" style="margin-bottom:1.25rem;">
-    <div class="card-title">本周操作计划</div>
-    <div class="week" id="week-plan"></div>
-  </div>
+  </div><!-- /wrap -->
 
-  <!-- PARAMS -->
-  <div class="grid2">
-    <div class="card">
-      <div class="card-title">SPY 价差参数</div>
-      <div class="param-row"><span class="param-k">到期日 (DTE)</span><span class="param-v">30–45 天</span></div>
-      <div class="param-row"><span class="param-k">Delta 范围</span><span class="param-v">0.15 – 0.20</span></div>
-      <div class="param-row"><span class="param-k">虚值距离</span><span class="param-v">5–7%</span></div>
-      <div class="param-row"><span class="param-k">价差宽度</span><span class="param-v">10 点</span></div>
-      <div class="param-row"><span class="param-k">参考行权价区间</span><span class="param-v" id="spy-strike">--</span></div>
-    </div>
-    <div class="card">
-      <div class="card-title">QQQ 价差参数</div>
-      <div class="param-row"><span class="param-k">到期日 (DTE)</span><span class="param-v">30–45 天</span></div>
-      <div class="param-row"><span class="param-k">Delta 范围</span><span class="param-v">0.10 – 0.18</span></div>
-      <div class="param-row"><span class="param-k">虚值距离</span><span class="param-v">7–10%</span></div>
-      <div class="param-row"><span class="param-k">价差宽度</span><span class="param-v">10–15 点</span></div>
-      <div class="param-row"><span class="param-k">参考行权价区间</span><span class="param-v" id="qqq-strike">--</span></div>
-    </div>
-  </div>
+  <script>
+    /* ═══════════════════════════════════════════════
+       CONFIG
+    ═══════════════════════════════════════════════ */
+    const FINNHUB_KEY = 'd7g2qrpr01qqb8ri54kgd7g2qrpr01qqb8ri54l0';
+    const REFRESH_SECONDS = 30;
 
-  <!-- RISK RULES -->
-  <div class="card" style="margin-bottom:1.25rem; margin-top:12px;">
-    <div class="card-title">风险管理规则</div>
-    <div class="check-item"><div class="check-icon ci-pass">✓</div><div>单笔最大风险 ≤ 账户总值的 <strong>5%</strong></div></div>
-    <div class="check-item"><div class="check-icon ci-pass">✓</div><div>达到 <strong>50% 盈利</strong>时立即平仓，不等到到期</div></div>
-    <div class="check-item"><div class="check-icon ci-warn">!</div><div>亏损达 <strong>2× 收取权利金</strong>时强制止损</div></div>
-    <div class="check-item"><div class="check-icon ci-warn">!</div><div>下跌行情中<strong>优先减少 QQQ 敞口</strong></div></div>
-  </div>
-
-  <!-- ASSESSMENT -->
-  <div class="card" style="margin-bottom:1.25rem;">
-    <div class="card-title">策略评估</div>
-    <div class="assess-item"><span class="badge badge-g">优点</span><span>卖出虚值看跌价差，最大亏损锁定为价差宽度，风险有限可量化。</span></div>
-    <div class="assess-item"><span class="badge badge-g">优点</span><span>只在市场下跌 + VIX 跳升时入场，确保权利金足够丰厚，避免低波环境卖便宜货。</span></div>
-    <div class="assess-item"><span class="badge badge-g">优点</span><span>50% 获利了结是业内黄金法则，持仓时间减半，有效降低 Gamma 和事件风险。</span></div>
-    <div class="assess-item"><span class="badge badge-g">优点</span><span>2× 止损规则清晰，配合 5% 仓位上限，账户单次回撤可控。</span></div>
-    <div class="assess-item"><span class="badge badge-a">注意</span><span>VIX 需达 20–25+ 才值得入场，VIX &lt; 18 时权利金稀薄，风险回报比不佳。</span></div>
-    <div class="assess-item"><span class="badge badge-a">注意</span><span>30–45 DTE 窗口可能跨越 FOMC / CPI / 财报季，入场前务必检查经济日历。</span></div>
-    <div class="assess-item"><span class="badge badge-r">风险</span><span>连续大跌行情会连续触发止损，需严格执行单笔 5% 风险上限，切勿加仓摊平。</span></div>
-    <div class="assess-item"><span class="badge badge-r">风险</span><span>SPY + QQQ 相关性极高，系统性下跌时两腿同时受压，非真正的敞口分散。</span></div>
-  </div>
-
-  <div class="footer">
-    行情：<a href="https://finnhub.io" target="_blank">Finnhub</a>（SPY / QQQ）&nbsp;+&nbsp;
-    <a href="https://finance.yahoo.com/quote/%5EVIX" target="_blank">Yahoo Finance</a>（VIX）
-    &nbsp;|&nbsp; 每 <strong>30 秒</strong>自动刷新
-    &nbsp;|&nbsp; 本页仅供参考，不构成投资建议<br>
-    <span id="last-update">--</span>
-  </div>
-
-</div><!-- /wrap -->
-
-<script>
-/* ═══════════════════════════════════════════════
-   CONFIG
-═══════════════════════════════════════════════ */
-const FINNHUB_KEY      = 'd7g2qrpr01qqb8ri54kgd7g2qrpr01qqb8ri54l0';
-const REFRESH_SECONDS  = 30;
-
-// Cache DOM references for performance
-const DOM = {};
-function initDOM() {
-  const ids = [
-    'clock', 'countdown', 'refresh-btn', 'live-dot', 'error-box',
-    'banner', 'banner-signal', 'banner-reason', 'banner-icon',
-    'spy-val', 'spy-chg', 'qqq-val', 'qqq-chg', 'vix-val', 'vix-sub',
-    'signal-val', 'signal-sub', 'spy-strike', 'qqq-strike',
-    'chk-market-icon', 'chk-market-val', 'chk-vix-icon', 'chk-vix-val',
-    'chk-green-icon', 'chk-green-val', 'week-plan', 'last-update'
-  ];
-  ids.forEach(id => { 
-    const el = document.getElementById(id);
-    if (!el) {
-      console.warn(`[DOM] Element #${id} not found`);
-    }
-    DOM[id] = el;
-  });
-  
-  // Verify critical elements
-  const criticalIds = ['banner', 'spy-val', 'qqq-val', 'vix-val'];
-  const missing = criticalIds.filter(id => !DOM[id]);
-  if (missing.length > 0) {
-    console.error(`[DOM] Critical elements missing: ${missing.join(', ')}`);
-    return false;
-  }
-  return true;
-}
-
-/* ═══════════════════════════════════════════════
-   CLOCK
-═══════════════════════════════════════════════ */
-function updateClock() {
-  if (!DOM.clock) return;
-  const now = new Date();
-  DOM.clock.textContent = now.toLocaleString('zh-CN', {
-    month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit', hour12:false
-  });
-}
-
-/* ═══════════════════════════════════════════════
-   COUNTDOWN TIMER
-═══════════════════════════════════════════════ */
-let cdTimer = null, cdLeft = REFRESH_SECONDS;
-
-function startCountdown() {
-  clearInterval(cdTimer);
-  cdLeft = REFRESH_SECONDS;
-  cdTimer = setInterval(() => {
-    cdLeft--;
-    DOM.countdown.textContent = cdLeft + 's';
-    DOM.countdown.className = 'countdown' + (cdLeft <= 10 ? ' urgent' : '');
-    if (cdLeft <= 0) { clearInterval(cdTimer); loadData(); }
-  }, 1000);
-}
-
-/* ═══════════════════════════════════════════════
-   WEEKLY PLAN - Optimized with DocumentFragment
-═══════════════════════════════════════════════ */
-const DAYS    = ['周一','周二','周三','周四','周五'];
-const ACTIONS = ['开仓建立头寸','红日加仓','最终入场窗口','获利了结','降低风险'];
-
-function renderWeek() {
-  if (!DOM['week-plan']) return;
-  const todayIdx = new Date().getDay() - 1;
-  const fragment = document.createDocumentFragment();
-  DAYS.forEach((d, i) => {
-    const el = document.createElement('div');
-    el.className = 'day-card' + (i === todayIdx ? ' today' : '');
-    el.innerHTML = `<div class="day-name">${d}${i===todayIdx?' ✦':''}</div><div class="day-action">${ACTIONS[i]}</div>`;
-    fragment.appendChild(el);
-  });
-  DOM['week-plan'].appendChild(fragment);
-}
-
-/* ═══════════════════════════════════════════════
-   HELPERS
-═══════════════════════════════════════════════ */
-const fmt     = (n, d=2) => (!isNaN(n) && n!=null) ? (+n).toFixed(d) : '--';
-const fmtP    = n => fmt(n, 2) !== '--' ? '$' + fmt(n,2) : '--';
-const fmtPct  = n => {
-  if (isNaN(n) || n == null) return '--';
-  return (n > 0 ? '+' : '') + (+n).toFixed(2) + '%';
-};
-
-function setLoading(on) {
-  DOM['refresh-btn'].disabled = on;
-  DOM['refresh-btn'].textContent = on ? '⟳ ...' : '⟳ 刷新';
-  DOM['live-dot'].className = 'live-dot' + (on ? ' loading' : '');
-}
-
-function showError(msg) {
-  DOM['error-box'].style.display = msg ? 'block' : 'none';
-  DOM['error-box'].textContent   = msg ? '⚠ ' + msg : '';
-}
-
-/* ═══════════════════════════════════════════════
-   FETCH: Finnhub
-   GET /api/v1/quote?symbol=X&token=KEY
-   { c: price, d: change, dp: pct%, o: open, pc: prevClose }
-═══════════════════════════════════════════════ */
-async function fetchFinnhub(symbol, retries = 2) {
-  let lastErr;
-  for (let i = 0; i <= retries; i++) {
-    try {
-      console.log(`[Finnhub] Fetching ${symbol} (attempt ${i + 1})...`);
-      const r = await fetch(
-        `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`,
-        { signal: AbortSignal.timeout(8000) }
-      );
-      if (!r.ok) throw new Error(`Finnhub ${symbol}: HTTP ${r.status}`);
-      const j = await r.json();
-      console.log(`[Finnhub] ${symbol} response:`, j);
-      
-      // Market closed - return previous close with special flag
-      if (!j.c || j.c === 0 || (j.dp === 0 && j.d === 0)) {
-        console.log(`[Finnhub] ${symbol}: Market appears closed, using previous close`);
-        return { price: j.pc || 0, change: 0, pct: 0, open: j.o, prevClose: j.pc, marketClosed: true };
-      }
-      
-      const result = { price: j.c, change: j.d, pct: j.dp, open: j.o, prevClose: j.pc, marketClosed: false };
-      console.log(`[Finnhub] ${symbol} parsed:`, result);
-      return result;
-    } catch (err) {
-      lastErr = err;
-      console.warn(`[Finnhub] ${symbol} attempt ${i + 1} failed:`, err.message);
-      if (i < retries) await new Promise(res => setTimeout(res, 500 * (i + 1)));
-    }
-  }
-  throw lastErr;
-}
-
-/* ═══════════════════════════════════════════════
-   FETCH: VIX from Yahoo Finance
-   Tries 3 methods in order:
-     1. Direct (works if browser / no CORS block)
-     2. corsproxy.io
-     3. allorigins.win
-═══════════════════════════════════════════════ */
-const YF_URL = 'https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d';
-
-function parseYF(j) {
-  const meta  = j?.chart?.result?.[0]?.meta;
-  const price = meta?.regularMarketPrice;
-  const prev  = meta?.chartPreviousClose;
-  if (!price) throw new Error('VIX: unexpected Yahoo Finance JSON structure');
-  return { price, pct: prev ? (price - prev) / prev * 100 : null };
-}
-
-async function fetchVIX(retries = 2) {
-  const cacheBuster = `&_=${Date.now()}`;
-  let lastErr;
-
-  for (let attempt = 0; attempt <= retries; attempt++) {
-    // Method 1: corsproxy.io (most reliable)
-    try {
-      console.log(`[VIX] Attempt ${attempt + 1}: trying corsproxy.io`);
-      const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(YF_URL + cacheBuster),
-                            { signal: AbortSignal.timeout(8000) });
-      if (!r.ok) throw new Error(`corsproxy HTTP ${r.status}`);
-      const j = await r.json();
-      const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (!price) throw new Error('Invalid VIX data from corsproxy');
-      console.log(`[VIX] Success via corsproxy: ${price}`);
-      return parseYF(j);
-    } catch(err) {
-      console.warn(`[VIX] corsproxy failed:`, err.message);
-      lastErr = err;
-    }
-
-    // Method 2: allorigins.win
-    try {
-      console.log(`[VIX] Attempt ${attempt + 1}: trying allorigins.win`);
-      const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(YF_URL + cacheBuster),
-                            { signal: AbortSignal.timeout(10000) });
-      if (!r.ok) throw new Error(`allorigins HTTP ${r.status}`);
-      const w = await r.json();
-      if (!w.contents) throw new Error('Empty response from allorigins');
-      const j = JSON.parse(w.contents);
-      const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (!price) throw new Error('Invalid VIX data from allorigins');
-      console.log(`[VIX] Success via allorigins: ${price}`);
-      return parseYF(j);
-    } catch(err) {
-      console.warn(`[VIX] allorigins failed:`, err.message);
-      lastErr = err;
-    }
-
-    // Method 3: direct (least likely to work due to CORS)
-    try {
-      console.log(`[VIX] Attempt ${attempt + 1}: trying direct`);
-      const r = await fetch(YF_URL + cacheBuster, { signal: AbortSignal.timeout(5000) });
-      if (!r.ok) throw new Error(`direct HTTP ${r.status}`);
-      const j = await r.json();
-      const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
-      if (!price) throw new Error('Invalid VIX data from direct');
-      console.log(`[VIX] Success via direct: ${price}`);
-      return parseYF(j);
-    } catch(err) {
-      console.warn(`[VIX] direct failed:`, err.message);
-      lastErr = err;
-    }
-
-    // Wait before retry if not last attempt
-    if (attempt < retries) {
-      const delay = 1000 * (attempt + 1);
-      console.log(`[VIX] Waiting ${delay}ms before retry...`);
-      await new Promise(res => setTimeout(res, delay));
-    }
-  }
-  
-  throw lastErr || new Error('VIX: all methods failed');
-}
-
-/* ═══════════════════════════════════════════════
-   RENDER - Optimized with cached DOM references
-═══════════════════════════════════════════════ */
-function renderMetrics(spy, qqq, vix) {
-  console.log('[Render] Rendering metrics with:', { spy, qqq, vix });
-  console.log('[Render] DOM elements:', { 
-    'spy-val': DOM['spy-val'], 
-    'qqq-val': DOM['qqq-val'],
-    'spy-chg': DOM['spy-chg'],
-    'qqq-chg': DOM['qqq-chg']
-  });
-  
-  const sc = spy.pct > 0 ? 'up' : spy.pct < 0 ? 'down' : '';
-  DOM['spy-val'].innerHTML = `<span class="${sc}">${fmtP(spy.price)}</span>`;
-  DOM['spy-chg'].innerHTML = `<span class="${sc}">${fmtPct(spy.pct)}</span>`;
-  console.log('[Render] After SPY update - spy-val:', DOM['spy-val'].innerHTML);
-  
-  const qc = qqq.pct > 0 ? 'up' : qqq.pct < 0 ? 'down' : '';
-  DOM['qqq-val'].innerHTML = `<span class="${qc}">${fmtP(qqq.price)}</span>`;
-  DOM['qqq-chg'].innerHTML = `<span class="${qc}">${fmtPct(qqq.pct)}</span>`;
-  console.log('[Render] After QQQ update - qqq-val:', DOM['qqq-val'].innerHTML);
-  
-  const vc = vix.price > 25 ? 'down' : vix.price > 18 ? 'neutral' : 'up';
-  const vl = vix.price > 30 ? '极度恐慌 ✦' : vix.price > 25 ? '高波动 ✦ 可入场' : vix.price > 18 ? '中等波动' : '偏低';
-  DOM['vix-val'].innerHTML  = `<span class="${vc}">${fmt(vix.price,1)}</span>`;
-  DOM['vix-sub'].textContent = vl;
-  
-  DOM['spy-strike'].textContent =
-    `≈ $${(spy.price * 0.93).toFixed(0)} – $${(spy.price * 0.95).toFixed(0)}`;
-  DOM['qqq-strike'].textContent =
-    `≈ $${(qqq.price * 0.90).toFixed(0)} – $${(qqq.price * 0.93).toFixed(0)}`;
-  
-  console.log('[Render] Metrics rendering complete');
-}
-
-function renderChecklist(spy, vix) {
-  const p = spy.pct;
-
-  const mi = DOM['chk-market-icon'];
-  const mv = DOM['chk-market-val'];
-  mv.textContent = `SPY ${fmtPct(p)}`;
-  if (p >= -1.5 && p <= -0.5)      { mi.className = 'check-icon ci-pass'; mi.textContent = '✓'; }
-  else if (p < -1.5)               { mi.className = 'check-icon ci-warn'; mi.textContent = '!'; mv.textContent += '（跌幅超范围，等待企稳）'; }
-  else                             { mi.className = 'check-icon ci-fail'; mi.textContent = '✗'; }
-
-  const vi = DOM['chk-vix-icon'];
-  const vv = DOM['chk-vix-val'];
-  vv.textContent = `VIX ${fmt(vix.price,1)}`;
-  if (vix.price >= 25)             { vi.className = 'check-icon ci-pass'; vi.textContent = '✓'; }
-  else if (vix.price >= 20)        { vi.className = 'check-icon ci-warn'; vi.textContent = '!'; vv.textContent += '（偏高但未到理想触发区）'; }
-  else                             { vi.className = 'check-icon ci-fail'; vi.textContent = '✗'; vv.textContent += '（波动率偏低，暂不入场）'; }
-
-  const gi = DOM['chk-green-icon'];
-  const gv = DOM['chk-green-val'];
-  gv.textContent = `SPY ${fmtPct(p)}`;
-  if (p < 0) { gi.className = 'check-icon ci-pass'; gi.textContent = '✓'; }
-  else       { gi.className = 'check-icon ci-fail'; gi.textContent = '✗'; gv.textContent += ' — 上涨日禁止入场'; }
-}
-
-function renderBanner(spy, vix) {
-  const p = spy.pct, v = vix.price;
-  const bn = DOM.banner;
-  const sg = DOM['banner-signal'];
-  const rs = DOM['banner-reason'];
-  const ic = DOM['banner-icon'];
-  const sv = DOM['signal-val'];
-  const ss = DOM['signal-sub'];
-
-  const mktOk    = p >= -1.5 && p <= -0.5;
-  const vixOk    = v >= 20;
-  const notGreen = p < 0;
-
-  bn.className = 'banner';
-
-  if (p > 0) {
-    bn.classList.add('no');
-    sg.textContent = '🚫 今日禁止入场';
-    rs.textContent = `市场上涨 SPY ${fmtPct(p)}，绿色日严禁开仓`;
-    ic.textContent = '🔴';
-    sv.innerHTML   = '<span class="down">禁止</span>';
-    ss.textContent = '市场上涨';
-  } else if (mktOk && vixOk) {
-    bn.classList.add('go');
-    sg.textContent = '✅ 入场信号激活';
-    rs.textContent = `SPY ${fmtPct(p)} 在入场区间，VIX ${fmt(v,1)} 波动率上升，可建仓（确认日内企稳）`;
-    ic.textContent = '🟢';
-    sv.innerHTML   = '<span class="up">入场</span>';
-    ss.textContent = '条件满足';
-  } else if (notGreen && !vixOk) {
-    bn.classList.add('wait');
-    sg.textContent = '⏸ 观望 — 等待波动率上升';
-    rs.textContent = `SPY ${fmtPct(p)} 方向正确，但 VIX ${fmt(v,1)} 偏低，权利金稀薄，暂不入场`;
-    ic.textContent = '🟡';
-    sv.innerHTML   = '<span class="neutral">观望</span>';
-    ss.textContent = 'VIX 不足';
-  } else if (notGreen && !mktOk) {
-    bn.classList.add('wait');
-    sg.textContent = '⏸ 观望 — 跌幅不在入场区间';
-    rs.textContent = `SPY ${fmtPct(p)}，策略要求 -0.5% 至 -1.5%。${p < -1.5 ? '跌幅过大，等待企稳' : '跌幅不足'}`;
-    ic.textContent = '🟡';
-    sv.innerHTML   = '<span class="neutral">观望</span>';
-    ss.textContent = '跌幅不符';
-  } else {
-    bn.classList.add('wait');
-    sg.textContent = '📊 数据已加载';
-    rs.textContent = `SPY ${fmtPct(p)} | VIX ${fmt(v,1)}`;
-    ic.textContent = '📊';
-    sv.textContent = '--'; ss.textContent = '--';
-  }
-}
-
-/* ═══════════════════════════════════════════════
-   MAIN LOAD
-═══════════════════════════════════════════════ */
-async function loadData() {
-  console.log('[Dashboard] Starting data load...');
-  setLoading(true);
-  showError('');
-
-  let loadTimeout = null;
-
-  // Add timeout for entire data load operation
-  const timeoutPromise = new Promise((_, reject) => {
-    loadTimeout = setTimeout(() => {
-      reject(new Error('数据加载超时 (25 秒)，请检查网络连接'));
-    }, 25000);
-  });
-
-  try {
-    console.log('[Dashboard] Fetching SPY, QQQ from Finnhub and VIX from Yahoo...');
-    
-    const [spy, qqq, vix] = await Promise.race([
-      Promise.all([
-        fetchFinnhub('SPY'),
-        fetchFinnhub('QQQ'),
-        fetchVIX()
-      ]),
-      timeoutPromise
-    ]);
-
-    clearTimeout(loadTimeout);
-    console.log('[Dashboard] Data received:', { spy, qqq, vix });
-
-    // Validate data before rendering - check each individually
-    if (!spy || !spy.price) {
-      throw new Error('SPY 数据获取失败');
-    }
-    if (!qqq || !qqq.price) {
-      throw new Error('QQQ 数据获取失败');
-    }
-    if (!vix || !vix.price) {
-      throw new Error('VIX 数据获取失败');
-    }
-
-    console.log('[Dashboard] Data validation passed, rendering...');
-    renderMetrics(spy, qqq, vix);
-    renderChecklist(spy, vix);
-    renderBanner(spy, vix);
-    DOM['live-dot'].className = 'live-dot';
-    DOM['last-update'].textContent =
-      '最后更新：' + new Date().toLocaleString('zh-CN');
-    console.log('[Dashboard] Data load complete!');
-  } catch(err) {
-    if (loadTimeout) clearTimeout(loadTimeout);
-    DOM['live-dot'].className = 'live-dot error';
-    const errorMsg = err.message + ' — 请检查 Finnhub API Key 是否已填写，或网络是否正常';
-    showError(errorMsg);
-    console.error('[Dashboard] Load failed:', err);
-    DOM.banner.className = 'banner no';
-    DOM['banner-signal'].textContent = '❌ 数据加载失败';
-    DOM['banner-reason'].textContent = err.message;
-    DOM['banner-icon'].textContent   = '⚠️';
-  }
-  setLoading(false);
-  startCountdown();
-}
-
-function triggerRefresh() { clearInterval(cdTimer); loadData(); }
-
-// Initialize DOM cache and start
-window.addEventListener('DOMContentLoaded', () => {
-  const domReady = initDOM();
-  
-  // Render weekly plan after DOM is ready
-  renderWeek();
-  
-  // Start clock immediately after DOM is ready
-  if (DOM.clock) {
-    updateClock();
-    setInterval(updateClock, 1000);
-  }
-  
-  if (!domReady) {
-    console.error('[Dashboard] DOM initialization failed, retrying...');
-    setTimeout(() => {
-      const retry = initDOM();
-      if (retry) {
-        if (!DOM['week-plan']) renderWeek();
-        if (DOM.clock && !cdTimer) {
-          updateClock();
-          setInterval(updateClock, 1000);
+    // Cache DOM references for performance
+    const DOM = {};
+    function initDOM() {
+      const ids = [
+        'clock', 'countdown', 'refresh-btn', 'live-dot', 'error-box',
+        'banner', 'banner-signal', 'banner-reason', 'banner-icon',
+        'spy-val', 'spy-chg', 'qqq-val', 'qqq-chg', 'vix-val', 'vix-sub',
+        'signal-val', 'signal-sub', 'spy-strike', 'qqq-strike',
+        'chk-market-icon', 'chk-market-val', 'chk-vix-icon', 'chk-vix-val',
+        'chk-green-icon', 'chk-green-val', 'week-plan', 'last-update'
+      ];
+      ids.forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) {
+          console.warn(`[DOM] Element #${id} not found`);
         }
-        loadData();
-      } else {
-        showError('页面初始化失败，请刷新页面重试');
+        DOM[id] = el;
+      });
+
+      // Verify critical elements
+      const criticalIds = ['banner', 'spy-val', 'qqq-val', 'vix-val'];
+      const missing = criticalIds.filter(id => !DOM[id]);
+      if (missing.length > 0) {
+        console.error(`[DOM] Critical elements missing: ${missing.join(', ')}`);
+        return false;
       }
-    }, 500);
-  } else {
-    console.log('[Dashboard] DOM initialized successfully');
-    loadData();
-  }
-});
-</script>
+      return true;
+    }
+
+    /* ═══════════════════════════════════════════════
+       CLOCK
+    ═══════════════════════════════════════════════ */
+    function updateClock() {
+      if (!DOM.clock) return;
+      const now = new Date();
+      DOM.clock.textContent = now.toLocaleString('zh-CN', {
+        month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+      });
+    }
+
+    /* ═══════════════════════════════════════════════
+       COUNTDOWN TIMER
+    ═══════════════════════════════════════════════ */
+    let cdTimer = null, cdLeft = REFRESH_SECONDS;
+
+    function startCountdown() {
+      clearInterval(cdTimer);
+      cdLeft = REFRESH_SECONDS;
+      cdTimer = setInterval(() => {
+        cdLeft--;
+        DOM.countdown.textContent = cdLeft + 's';
+        DOM.countdown.className = 'countdown' + (cdLeft <= 10 ? ' urgent' : '');
+        if (cdLeft <= 0) { clearInterval(cdTimer); loadData(); }
+      }, 1000);
+    }
+
+    /* ═══════════════════════════════════════════════
+       WEEKLY PLAN - Optimized with DocumentFragment
+    ═══════════════════════════════════════════════ */
+    const DAYS = ['周一', '周二', '周三', '周四', '周五'];
+    const ACTIONS = ['开仓建立头寸', '红日加仓', '最终入场窗口', '获利了结', '降低风险'];
+
+    function renderWeek() {
+      if (!DOM['week-plan']) return;
+      const todayIdx = new Date().getDay() - 1;
+      const fragment = document.createDocumentFragment();
+      DAYS.forEach((d, i) => {
+        const el = document.createElement('div');
+        el.className = 'day-card' + (i === todayIdx ? ' today' : '');
+        el.innerHTML = `<div class="day-name">${d}${i === todayIdx ? ' ✦' : ''}</div><div class="day-action">${ACTIONS[i]}</div>`;
+        fragment.appendChild(el);
+      });
+      DOM['week-plan'].appendChild(fragment);
+    }
+
+    /* ═══════════════════════════════════════════════
+       HELPERS
+    ═══════════════════════════════════════════════ */
+    const fmt = (n, d = 2) => (!isNaN(n) && n != null) ? (+n).toFixed(d) : '--';
+    const fmtP = n => fmt(n, 2) !== '--' ? '$' + fmt(n, 2) : '--';
+    const fmtPct = n => {
+      if (isNaN(n) || n == null) return '--';
+      return (n > 0 ? '+' : '') + (+n).toFixed(2) + '%';
+    };
+
+    function setLoading(on) {
+      DOM['refresh-btn'].disabled = on;
+      DOM['refresh-btn'].textContent = on ? '⟳ ...' : '⟳ 刷新';
+      DOM['live-dot'].className = 'live-dot' + (on ? ' loading' : '');
+    }
+
+    function showError(msg) {
+      DOM['error-box'].style.display = msg ? 'block' : 'none';
+      DOM['error-box'].textContent = msg ? '⚠ ' + msg : '';
+    }
+
+    /* ═══════════════════════════════════════════════
+       FETCH: Finnhub
+       GET /api/v1/quote?symbol=X&token=KEY
+       { c: price, d: change, dp: pct%, o: open, pc: prevClose }
+    ═══════════════════════════════════════════════ */
+    async function fetchFinnhub(symbol, retries = 2) {
+      let lastErr;
+      for (let i = 0; i <= retries; i++) {
+        try {
+          console.log(`[Finnhub] Fetching ${symbol} (attempt ${i + 1})...`);
+          const r = await fetch(
+            `https://finnhub.io/api/v1/quote?symbol=${symbol}&token=${FINNHUB_KEY}`,
+            { signal: AbortSignal.timeout(8000) }
+          );
+          if (!r.ok) throw new Error(`Finnhub ${symbol}: HTTP ${r.status}`);
+          const j = await r.json();
+          console.log(`[Finnhub] ${symbol} response:`, j);
+
+          // Market closed - return previous close with special flag
+          if (!j.c || j.c === 0 || (j.dp === 0 && j.d === 0)) {
+            console.log(`[Finnhub] ${symbol}: Market appears closed, using previous close`);
+            return { price: j.pc || 0, change: 0, pct: 0, open: j.o, prevClose: j.pc, marketClosed: true };
+          }
+
+          const result = { price: j.c, change: j.d, pct: j.dp, open: j.o, prevClose: j.pc, marketClosed: false };
+          console.log(`[Finnhub] ${symbol} parsed:`, result);
+          return result;
+        } catch (err) {
+          lastErr = err;
+          console.warn(`[Finnhub] ${symbol} attempt ${i + 1} failed:`, err.message);
+          if (i < retries) await new Promise(res => setTimeout(res, 500 * (i + 1)));
+        }
+      }
+      throw lastErr;
+    }
+
+    /* ═══════════════════════════════════════════════
+       FETCH: VIX from Yahoo Finance
+       Tries 3 methods in order:
+         1. Direct (works if browser / no CORS block)
+         2. corsproxy.io
+         3. allorigins.win
+    ═══════════════════════════════════════════════ */
+    const YF_URL = 'https://query1.finance.yahoo.com/v8/finance/chart/%5EVIX?interval=1d&range=1d';
+
+    function parseYF(j) {
+      const meta = j?.chart?.result?.[0]?.meta;
+      const price = meta?.regularMarketPrice;
+      const prev = meta?.chartPreviousClose;
+      if (!price) throw new Error('VIX: unexpected Yahoo Finance JSON structure');
+      return { price, pct: prev ? (price - prev) / prev * 100 : null };
+    }
+
+    async function fetchVIX(retries = 2) {
+      const cacheBuster = `&_=${Date.now()}`;
+      let lastErr;
+
+      for (let attempt = 0; attempt <= retries; attempt++) {
+        // Method 1: corsproxy.io (most reliable)
+        try {
+          console.log(`[VIX] Attempt ${attempt + 1}: trying corsproxy.io`);
+          const r = await fetch('https://corsproxy.io/?' + encodeURIComponent(YF_URL + cacheBuster),
+            { signal: AbortSignal.timeout(8000) });
+          if (!r.ok) throw new Error(`corsproxy HTTP ${r.status}`);
+          const j = await r.json();
+          const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+          if (!price) throw new Error('Invalid VIX data from corsproxy');
+          console.log(`[VIX] Success via corsproxy: ${price}`);
+          return parseYF(j);
+        } catch (err) {
+          console.warn(`[VIX] corsproxy failed:`, err.message);
+          lastErr = err;
+        }
+
+        // Method 2: allorigins.win
+        try {
+          console.log(`[VIX] Attempt ${attempt + 1}: trying allorigins.win`);
+          const r = await fetch('https://api.allorigins.win/get?url=' + encodeURIComponent(YF_URL + cacheBuster),
+            { signal: AbortSignal.timeout(10000) });
+          if (!r.ok) throw new Error(`allorigins HTTP ${r.status}`);
+          const w = await r.json();
+          if (!w.contents) throw new Error('Empty response from allorigins');
+          const j = JSON.parse(w.contents);
+          const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+          if (!price) throw new Error('Invalid VIX data from allorigins');
+          console.log(`[VIX] Success via allorigins: ${price}`);
+          return parseYF(j);
+        } catch (err) {
+          console.warn(`[VIX] allorigins failed:`, err.message);
+          lastErr = err;
+        }
+
+        // Method 3: direct (least likely to work due to CORS)
+        try {
+          console.log(`[VIX] Attempt ${attempt + 1}: trying direct`);
+          const r = await fetch(YF_URL + cacheBuster, { signal: AbortSignal.timeout(5000) });
+          if (!r.ok) throw new Error(`direct HTTP ${r.status}`);
+          const j = await r.json();
+          const price = j?.chart?.result?.[0]?.meta?.regularMarketPrice;
+          if (!price) throw new Error('Invalid VIX data from direct');
+          console.log(`[VIX] Success via direct: ${price}`);
+          return parseYF(j);
+        } catch (err) {
+          console.warn(`[VIX] direct failed:`, err.message);
+          lastErr = err;
+        }
+
+        // Wait before retry if not last attempt
+        if (attempt < retries) {
+          const delay = 1000 * (attempt + 1);
+          console.log(`[VIX] Waiting ${delay}ms before retry...`);
+          await new Promise(res => setTimeout(res, delay));
+        }
+      }
+
+      throw lastErr || new Error('VIX: all methods failed');
+    }
+
+    /* ═══════════════════════════════════════════════
+       RENDER - Optimized with cached DOM references
+    ═══════════════════════════════════════════════ */
+    function renderMetrics(spy, qqq, vix) {
+      console.log('[Render] Rendering metrics with:', { spy, qqq, vix });
+      console.log('[Render] DOM elements:', {
+        'spy-val': DOM['spy-val'],
+        'qqq-val': DOM['qqq-val'],
+        'spy-chg': DOM['spy-chg'],
+        'qqq-chg': DOM['qqq-chg']
+      });
+
+      const sc = spy.pct > 0 ? 'up' : spy.pct < 0 ? 'down' : '';
+      DOM['spy-val'].innerHTML = `<span class="${sc}">${fmtP(spy.price)}</span>`;
+      DOM['spy-chg'].innerHTML = `<span class="${sc}">${fmtPct(spy.pct)}</span>`;
+      console.log('[Render] After SPY update - spy-val:', DOM['spy-val'].innerHTML);
+
+      const qc = qqq.pct > 0 ? 'up' : qqq.pct < 0 ? 'down' : '';
+      DOM['qqq-val'].innerHTML = `<span class="${qc}">${fmtP(qqq.price)}</span>`;
+      DOM['qqq-chg'].innerHTML = `<span class="${qc}">${fmtPct(qqq.pct)}</span>`;
+      console.log('[Render] After QQQ update - qqq-val:', DOM['qqq-val'].innerHTML);
+
+      const vc = vix.price > 25 ? 'down' : vix.price > 18 ? 'neutral' : 'up';
+      const vl = vix.price > 30 ? '极度恐慌 ✦' : vix.price > 25 ? '高波动 ✦ 可入场' : vix.price > 18 ? '中等波动' : '偏低';
+      DOM['vix-val'].innerHTML = `<span class="${vc}">${fmt(vix.price, 1)}</span>`;
+      DOM['vix-sub'].textContent = vl;
+
+      DOM['spy-strike'].textContent =
+        `≈ $${(spy.price * 0.93).toFixed(0)} – $${(spy.price * 0.95).toFixed(0)}`;
+      DOM['qqq-strike'].textContent =
+        `≈ $${(qqq.price * 0.90).toFixed(0)} – $${(qqq.price * 0.93).toFixed(0)}`;
+
+      console.log('[Render] Metrics rendering complete');
+    }
+
+    function renderChecklist(spy, vix) {
+      const p = spy.pct;
+
+      const mi = DOM['chk-market-icon'];
+      const mv = DOM['chk-market-val'];
+      mv.textContent = `SPY ${fmtPct(p)}`;
+      if (p >= -1.5 && p <= -0.5) { mi.className = 'check-icon ci-pass'; mi.textContent = '✓'; }
+      else if (p < -1.5) { mi.className = 'check-icon ci-warn'; mi.textContent = '!'; mv.textContent += '（跌幅超范围，等待企稳）'; }
+      else { mi.className = 'check-icon ci-fail'; mi.textContent = '✗'; }
+
+      const vi = DOM['chk-vix-icon'];
+      const vv = DOM['chk-vix-val'];
+      vv.textContent = `VIX ${fmt(vix.price, 1)}`;
+      if (vix.price >= 25) { vi.className = 'check-icon ci-pass'; vi.textContent = '✓'; }
+      else if (vix.price >= 20) { vi.className = 'check-icon ci-warn'; vi.textContent = '!'; vv.textContent += '（偏高但未到理想触发区）'; }
+      else { vi.className = 'check-icon ci-fail'; vi.textContent = '✗'; vv.textContent += '（波动率偏低，暂不入场）'; }
+
+      const gi = DOM['chk-green-icon'];
+      const gv = DOM['chk-green-val'];
+      gv.textContent = `SPY ${fmtPct(p)}`;
+      if (p < 0) { gi.className = 'check-icon ci-pass'; gi.textContent = '✓'; }
+      else { gi.className = 'check-icon ci-fail'; gi.textContent = '✗'; gv.textContent += ' — 上涨日禁止入场'; }
+    }
+
+    function renderBanner(spy, vix) {
+      const p = spy.pct, v = vix.price;
+      const bn = DOM.banner;
+      const sg = DOM['banner-signal'];
+      const rs = DOM['banner-reason'];
+      const ic = DOM['banner-icon'];
+      const sv = DOM['signal-val'];
+      const ss = DOM['signal-sub'];
+
+      const mktOk = p >= -1.5 && p <= -0.5;
+      const vixOk = v >= 20;
+      const notGreen = p < 0;
+
+      bn.className = 'banner';
+
+      if (p > 0) {
+        bn.classList.add('no');
+        sg.textContent = '🚫 今日禁止入场';
+        rs.textContent = `市场上涨 SPY ${fmtPct(p)}，绿色日严禁开仓`;
+        ic.textContent = '🔴';
+        sv.innerHTML = '<span class="down">禁止</span>';
+        ss.textContent = '市场上涨';
+      } else if (mktOk && vixOk) {
+        bn.classList.add('go');
+        sg.textContent = '✅ 入场信号激活';
+        rs.textContent = `SPY ${fmtPct(p)} 在入场区间，VIX ${fmt(v, 1)} 波动率上升，可建仓（确认日内企稳）`;
+        ic.textContent = '🟢';
+        sv.innerHTML = '<span class="up">入场</span>';
+        ss.textContent = '条件满足';
+      } else if (notGreen && !vixOk) {
+        bn.classList.add('wait');
+        sg.textContent = '⏸ 观望 — 等待波动率上升';
+        rs.textContent = `SPY ${fmtPct(p)} 方向正确，但 VIX ${fmt(v, 1)} 偏低，权利金稀薄，暂不入场`;
+        ic.textContent = '🟡';
+        sv.innerHTML = '<span class="neutral">观望</span>';
+        ss.textContent = 'VIX 不足';
+      } else if (notGreen && !mktOk) {
+        bn.classList.add('wait');
+        sg.textContent = '⏸ 观望 — 跌幅不在入场区间';
+        rs.textContent = `SPY ${fmtPct(p)}，策略要求 -0.5% 至 -1.5%。${p < -1.5 ? '跌幅过大，等待企稳' : '跌幅不足'}`;
+        ic.textContent = '🟡';
+        sv.innerHTML = '<span class="neutral">观望</span>';
+        ss.textContent = '跌幅不符';
+      } else {
+        bn.classList.add('wait');
+        sg.textContent = '📊 数据已加载';
+        rs.textContent = `SPY ${fmtPct(p)} | VIX ${fmt(v, 1)}`;
+        ic.textContent = '📊';
+        sv.textContent = '--'; ss.textContent = '--';
+      }
+    }
+
+    /* ═══════════════════════════════════════════════
+       MAIN LOAD
+    ═══════════════════════════════════════════════ */
+    async function loadData() {
+      console.log('[Dashboard] Starting data load...');
+      setLoading(true);
+      showError('');
+
+      let loadTimeout = null;
+
+      // Add timeout for entire data load operation
+      const timeoutPromise = new Promise((_, reject) => {
+        loadTimeout = setTimeout(() => {
+          reject(new Error('数据加载超时 (25 秒)，请检查网络连接'));
+        }, 25000);
+      });
+
+      try {
+        console.log('[Dashboard] Fetching SPY, QQQ from Finnhub and VIX from Yahoo...');
+
+        const [spy, qqq, vix] = await Promise.race([
+          Promise.all([
+            fetchFinnhub('SPY'),
+            fetchFinnhub('QQQ'),
+            fetchVIX()
+          ]),
+          timeoutPromise
+        ]);
+
+        clearTimeout(loadTimeout);
+        console.log('[Dashboard] Data received:', { spy, qqq, vix });
+
+        // Validate data before rendering - check each individually
+        if (!spy || !spy.price) {
+          throw new Error('SPY 数据获取失败');
+        }
+        if (!qqq || !qqq.price) {
+          throw new Error('QQQ 数据获取失败');
+        }
+        if (!vix || !vix.price) {
+          throw new Error('VIX 数据获取失败');
+        }
+
+        console.log('[Dashboard] Data validation passed, rendering...');
+        renderMetrics(spy, qqq, vix);
+        renderChecklist(spy, vix);
+        renderBanner(spy, vix);
+        DOM['live-dot'].className = 'live-dot';
+        DOM['last-update'].textContent =
+          '最后更新：' + new Date().toLocaleString('zh-CN');
+        console.log('[Dashboard] Data load complete!');
+      } catch (err) {
+        if (loadTimeout) clearTimeout(loadTimeout);
+        DOM['live-dot'].className = 'live-dot error';
+        const errorMsg = err.message + ' — 请检查 Finnhub API Key 是否已填写，或网络是否正常';
+        showError(errorMsg);
+        console.error('[Dashboard] Load failed:', err);
+        DOM.banner.className = 'banner no';
+        DOM['banner-signal'].textContent = '❌ 数据加载失败';
+        DOM['banner-reason'].textContent = err.message;
+        DOM['banner-icon'].textContent = '⚠️';
+      }
+      setLoading(false);
+      startCountdown();
+    }
+
+    function triggerRefresh() { clearInterval(cdTimer); loadData(); }
+
+    // Initialize DOM cache and start
+    window.addEventListener('DOMContentLoaded', () => {
+      const domReady = initDOM();
+
+      // Render weekly plan after DOM is ready
+      renderWeek();
+
+      // Start clock immediately after DOM is ready
+      if (DOM.clock) {
+        updateClock();
+        setInterval(updateClock, 1000);
+      }
+
+      if (!domReady) {
+        console.error('[Dashboard] DOM initialization failed, retrying...');
+        setTimeout(() => {
+          const retry = initDOM();
+          if (retry) {
+            if (!DOM['week-plan']) renderWeek();
+            if (DOM.clock && !cdTimer) {
+              updateClock();
+              setInterval(updateClock, 1000);
+            }
+            loadData();
+          } else {
+            showError('页面初始化失败，请刷新页面重试');
+          }
+        }, 500);
+      } else {
+        console.log('[Dashboard] DOM initialized successfully');
+        loadData();
+      }
+    });
+  </script>
 </body>
+
 </html>
