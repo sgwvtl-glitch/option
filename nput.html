@@ -524,7 +524,7 @@
     <div class="nav-right">
       <div class="live-dot" id="live-dot"></div>
       <span class="nav-time" id="clock">--</span>
-      <span class="countdown" id="countdown">30s</span>
+      <span class="countdown" id="countdown">60s</span>
       <button class="refresh-btn" id="refresh-btn" onclick="triggerRefresh()">⟳ 刷新</button>
     </div>
   </nav>
@@ -662,7 +662,7 @@
     <div class="footer">
       行情：<a href="https://finnhub.io" target="_blank">Finnhub</a>（SPY / QQQ）&nbsp;+&nbsp;
       <a href="https://finance.yahoo.com/quote/%5EVIX" target="_blank">Yahoo Finance</a>（VIX）
-      &nbsp;|&nbsp; 每 <strong>30 秒</strong>自动刷新
+      &nbsp;|&nbsp; 每 <strong>60 秒</strong>自动刷新
       &nbsp;|&nbsp; 本页仅供参考，不构成投资建议<br>
       <span id="last-update">--</span>
     </div>
@@ -674,7 +674,7 @@
        CONFIG
     ═══════════════════════════════════════════════ */
     const FINNHUB_KEY = 'd7g2qrpr01qqb8ri54kgd7g2qrpr01qqb8ri54l0';
-    const REFRESH_SECONDS = 30;
+    const REFRESH_SECONDS = 60;
 
     // Cache DOM references for performance
     const DOM = {};
