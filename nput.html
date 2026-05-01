@@ -213,7 +213,7 @@
 
         .metrics {
             display: grid;
-            grid-template-columns: repeat(4, 1fr);
+            grid-template-columns: repeat(5, 1fr);
             gap: 10px;
             margin-bottom: 1.25rem;
             contain: layout;
@@ -223,7 +223,7 @@
             background: var(--bg2);
             border: 1px solid var(--border);
             border-radius: 10px;
-            padding: .9rem 1rem;
+            padding: .75rem .9rem;
             contain: layout style;
         }
 
@@ -568,11 +568,7 @@
                 <div class="mc-sub" id="fear-greed-sub">--</div>
                 <span class="mc-src src-yf">CNN</span>
             </div>
-        </div>
-
-        <!-- ENTRY SIGNAL -->
-        <div class="metrics" style="margin-top: 0;">
-            <div class="mc" style="grid-column: span 1;">
+            <div class="mc">
                 <div class="mc-label">入场信号</div>
                 <div class="mc-val" id="signal-val" style="font-size:14px;">--</div>
                 <div class="mc-sub" id="signal-sub">等待数据</div>
