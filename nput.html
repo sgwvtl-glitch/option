@@ -1017,7 +1017,7 @@
                 const [spy, qqq, vix, fg] = await Promise.all([
                     withTimeout(fetchFinnhub('SPY'), 12000, 'SPY'),
                     withTimeout(fetchFinnhub('QQQ'), 12000, 'QQQ'),
-                    safely(withTimeout(fetchVIX(), 10000, 'VIX'), 'VIX'),
+                    safely(withTimeout(fetchVIX(), 12000, 'VIX'), 'VIX'),
                     safely(withTimeout(fetchFearGreed(), 8000, 'FearGreed'), 'FearGreed')
                 ]);
 
@@ -1060,7 +1060,7 @@
             }
             renderWeek();
             updateClock();
-            setInterval(updateClock, 1000);
+            setInterval(updateClock, 1200);
             loadData();
         });
     </script>
